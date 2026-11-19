@@ -1,0 +1,32 @@
+{
+  "image": "ghcr.io/gento-teleoperation-apex/teleoperation-apex-runtime:1.0.4",
+  "anonymous_read": true,
+  "index_sha256": "sha256:afceca35da7ce88bc5a86d77dfc7c7c3999de349ae78920ba0aa358322305a2e",
+  "arm64_manifest_sha256": "sha256:3436b133262cf974262747acfbd0b4bcd680fed50d9f9ee6d377421d6afe5af2",
+  "arm64_manifest_verified": true,
+  "config_digest": "sha256:85624684bf261053ee7327d2c05f2dfe530cdef0ca2679698cac0dd93fe4e966",
+  "config_verified": true,
+  "architecture": "arm64",
+  "os": "linux",
+  "created": "2026-10-18T01:09:42.313232385+08:00",
+  "layer_count": 23,
+  "compressed_layer_bytes": 809638456,
+  "labels": {
+    "com.kernelmind.apex.architecture": "arm64",
+    "com.kernelmind.apex.gento-sdk-abi": "4.7",
+    "com.kernelmind.apex.gento-sdk-built-with": "4.7.1",
+    "com.kernelmind.apex.gento-sdk-compatible": ">=4.7.0,<4.8.0",
+    "com.kernelmind.apex.gento-sdk-owner": "core",
+    "com.kernelmind.apex.gento-sdk-payload": "absent",
+    "com.kernelmind.apex.gento-sdk-version": "4.7.1",
+    "com.kernelmind.apex.python-version": "3.10",
+    "com.kernelmind.apex.role": "base",
+    "com.kernelmind.apex.ros-distro": "humble",
+    "com.kernelmind.apex.runtime": "true",
+    "com.kernelmind.apex.runtime-abi": "humble-r2",
+    "com.kernelmind.apex.runtime-version": "1.0.4",
+    "com.kernelmind.apex.supported-platforms": "orin,thor",
+    "org.opencontainers.image.version": "22.04"
+  },
+  "large_layers_downloaded": false
+}

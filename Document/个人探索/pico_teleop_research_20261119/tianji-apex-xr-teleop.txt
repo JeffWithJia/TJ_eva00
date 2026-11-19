@@ -1,0 +1,90 @@
+
+遥操作客户端手册 | Gento Teleoperation Apex 文档
+跳到主要内容
+Gento Teleoperation Apex文档
+中文
+中文
+EnglishGitHub
+Gento Teleoperation Apex 文档
+产品文档
+Marvin Pro
+Skye / Luna
+软件使用说明
+使用说明
+Marvin Pro 当前版
+Gento 当前版界面与操作
+经典版界面
+遥操模式与输入源
+Marvin Pro 接口
+Gento（Skye/Luna）ROS 2 接口
+Data-Processing-Tool
+Apex XR 头显客户端
+Meta Quest App 安装
+Meta Quest 用户手册
+PICO App 安装
+PICO 用户手册
+隐私政策
+进阶配置及检测
+配置修改
+Topic 白名单配置与排查
+相机配置与 ROS 接口
+Marvin Pro ROS Topic 列表
+常见问题与速查
+Marvin Pro 模块化通讯排查
+Skye/Luna 模块化通讯排查
+末端夹爪
+ApexTool 使用与二次开发
+DM 夹爪 CAN 协议
+Wuji 二代灵巧手
+VLA 入门
+软件使用说明
+Apex XR 头显客户端
+Apex XR 遥操作客户端用户手册
+欢迎来到遥操作客户端使用指南。
+有线头显接线
+头显连接天准控制器时使用 1 号网口，连接灵境 Thor 控制器时使用 2 号网口；两种控制器的默认连接地址均为 6.6.7.100。现场网络参数如有调整，以设备交付配置为准。
+请选择对应的手册进行阅读：
+Meta Quest App 安装
+Meta Quest 用户手册
+PICO App 安装
+PICO 用户手册
+隐私政策
+上一页
+Data-Processing-Tool
+下一页
+Meta Quest App 安装
+Copyright © 2026 Gento Teleoperation Apex. Built with Docusaurus.
+
+LINKS
+#__docusaurus_skipToContent_fallback
+/Apex_doc_center/
+#
+/Apex_doc_center/xr-teleop
+/Apex_doc_center/en/xr-teleop
+https://github.com/Gento-Teleoperation-Apex/Apex_doc_center
+/Apex_doc_center/pro/new-id/product-introduction/overview
+/Apex_doc_center/gento/skye-luna/product-introduction/overview
+/Apex_doc_center/software/apex-teleop
+/Apex_doc_center/software/apex-teleop/pro-current
+/Apex_doc_center/software/apex-teleop/gento-current
+/Apex_doc_center/software/apex-teleop/classic
+/Apex_doc_center/software/apex-teleop/operation-modes
+/Apex_doc_center/software/apex-teleop/customer-interfaces
+/Apex_doc_center/software/apex-teleop/gento-interfaces
+/Apex_doc_center/data-converter/README.zh-CN
+/Apex_doc_center/xr-teleop/meta-app-installation
+/Apex_doc_center/xr-teleop/meta
+/Apex_doc_center/xr-teleop/pico-app-installation
+/Apex_doc_center/xr-teleop/pico
+/Apex_doc_center/xr-teleop/privacy-policy
+/Apex_doc_center/advanced/configuration
+/Apex_doc_center/advanced/topic-whitelist
+/Apex_doc_center/advanced/camera-configuration-and-interfaces
+/Apex_doc_center/advanced/ros-topic-list
+/Apex_doc_center/advanced/troubleshooting
+/Apex_doc_center/advanced/pro-communication-diagnostics
+/Apex_doc_center/advanced/gento-communication-diagnostics
+/Apex_doc_center/end-effectors/apex-tool
+/Apex_doc_center/end-effectors/dm-can-protocol
+/Apex_doc_center/end-effectors/wuji2
+/Apex_doc_center/vla

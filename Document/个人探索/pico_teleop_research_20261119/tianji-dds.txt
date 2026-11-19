@@ -1,0 +1,2098 @@
+
+人形机器人运控接口文档：DDS/ROS2 
+        :root, [data-we-color-scheme=&quot;light&quot;], [data-dingtalk-theme=&quot;light&quot;] {
+          --cangjie_black1:rgba(0,0,0,1);--cangjie_white1:rgba(255,255,255,1);--cangjie_blue1:rgba(63, 133, 255, 1);--cangjie_selection:rgba(1, 134, 251, 0.3);--cangjie_inactive_selection:rgba(136, 136, 136, 0.3);--cangjie_placeholder:rgba(23, 26, 29, 0.4)
+        }
+        [data-we-color-scheme=&quot;dark&quot;], [data-dingtalk-theme=&quot;dark&quot;] {
+          --cangjie_black1:rgba(0,0,0,1);--cangjie_white1:rgba(255,255,255,1);--cangjie_blue1:#3978E5;--cangjie_selection:rgba(1, 134, 251, 0.3);--cangjie_inactive_selection:rgba(136, 136, 136, 0.3);--cangjie_placeholder:rgba(255, 255, 255, 0.4)
+        }
+修订日期
+修订点
+修订人
+20261023
+文档建立
+﻿@吴耿鑫(gengsn吴耿鑫)﻿
+20261023
+新增话题说明
+﻿@嵇伟﻿
+目录
+1. 产品介绍
+2. deb安装与使用
+3. 人形机器人模块接口文档
+一、数据上传接口（Publisher Topic）
+二、控制接口（Subscriber Topic）
+三、服务接口（Service）
+4. 接口统计总览
+表 4-1　接口数量统计
+附录 A　返回码定义
+附录 B　枚举定义
+1.
+产品介绍
+此文档是人形机器人运控接口文档基于DDS/ROS2，用户可在ROS2环境下快速部署我们的产品控制，可参考下方的接口文档获取相关数据。我们也提供更底层的C++/Python的形式让客户通过自己的方式进行二开，此文档更适合用于客户在ROS2环境下做的机器人控制；
+我们附带提供通过GentoAPP程序进行连接控制。当前更新至1.0版本，客户可按需使用；
+GentoAPP支持通过连接运控X86控制器本体和域控orin/thor两种连接方式来进行对机器人本地控制，域控orin/thor就是通过下发下面的节点来进行控制，方便客户快速调试基础功能；
+提供GentoAPP安装程序，客户可安装在自己的pc电脑上。通过有线连接，与机器人形成通讯，控制机器人；
+2.
+deb安装与使用
+前提：
+用户需安装好 ROS2 humble，当前deb仅支持硬件环境为orin，软件环境为ubuntu 22版本
+下载：
+●
+orin硬件环境
+20261103_fx_deb.zip附件大小：9.1MB
+解压之后，有2个文件，分别是fx-robot-server、fx-integration-service
+安装：
+sudo dpkg -i fx-robot-server.deb
+sudo dpkg -i fx-integration-service.deb
+安装完成之后重启域控，系统下次启动时会自启动两个程序；
+若需要手动启动：
+fx_server_start.sh  -> 启动fx-robot-server
+fx_integration_start.sh -> 启动fx-integration-service
+注意！使用前请先诊断排查：
+1、由于控制器仅接受一路的节点数据，所以当使用此deb时，遥操Teleop服务无法被开启，会提示被占用，我们将在下一版本整合解决；若使用遥操服务，需杀死这2个deb进程，即可连接遥操
+2、若在使用我们的遥操程序进行遥操时，deb也会提示无法被连接，同样需要杀死遥操进程后手动启动即可使用
+我们晚些后会发布附带提供GentoAPP_v1.0版本的上位机程序，可供连接测试
+3.
+人形机器人模块接口文档
+本文档对 fx_robot_server 包中 fx_robot_server.cpp 所涉及的 ROS 2 Topic 与 Service 接口进行统计与介绍。全部字段定义取自 fx_interfaces 功能包的 msg / srv 定义文件，接口注册名与回调分组取自节点源码，接口清单与《人形APP接口定义V3》对齐。
+●
+节点名：fx_all_services_node
+●
+消息/服务包：fx_interfaces
+●
+服务端：fx_robot_server（基于 FX_L1 / FX_ToolDyn C SDK 封装）
+●
+ 对象类型 obj_type（FXObjType）枚举约定：ARM0=0（左臂）、ARM1=1（右臂）、HEAD=2（头部）、BODY=3（躯干）、LIFT=4（升降）
+●
+位姿表示 xyzabc：位置单位 m，姿态为 RPY 欧拉角、单位 °；矩阵类参数按行拆分传递
+●
+服务返回码 result：0 成功，负值为错误码，详见附录 A
+本文档共统计 Topic 通道 20 个（上行 4 个、下行 16 个）、Service 接口 72 个，按功能划分为系统、状态、参数、配置、终端、手部、反馈、负载辨识、运动学九类。
+一、数据上传接口（Publisher Topic）
+上行共 4 个话题，由节点内部独立线程按固定周期发布。QoS 均为 best_effort + KeepLast(1) + volatile：只保证最新一帧、不重传、不补发历史数据。订阅端应以「收到即最新」处理，帧序号字段仅用于跳帧检测。
+1. 机器人实时反馈
+接口名
+·     topic_fbk_get_rt
+接口形式
+·     Topic（Publisher，发布频率 1000 Hz）
+接口描述
+·     实时反馈主通道：整体状态字、设备 IMU、头/双臂/躯干/升降的指令与反馈、系统用户通道。
+消息类型
+·     类型：fx_interfaces/msg/RobotRT
+消息字段
+·     arm0_state（uint8）：状态字
+·     arm1_state（uint8）：状态字
+·     head_state（uint8）：状态字
+·     body_state（uint8）：状态字
+·     lift_state（uint8）：状态字
+·     m_rt_frame_serial（int32）：帧序号，用于跳帧检测
+·     m_device（DeviceRt）：设备级反馈：机器人本体 IMU 与 AGV IMU 各 9 维，以及 3 路 PDO 状态。
+·     m_head（HeadRt）：头部实时数据聚合。
+·     m_arms（ArmRt[2]）：数组，元素为 ArmRt 结构；单臂实时数据聚合：状态 + 指令 + 反馈。
+·     m_body（BodyRt）：躯干实时数据聚合。
+·     m_lift（LiftRt）：升降实时数据聚合。
+·     m_system（SystemRt）：系统级反馈：4 路用户自定义反馈类型与每路 8 维数据。
+2. 机器人状态组反馈
+接口名
+·     topic_fbk_get_sg
+接口形式
+·     Topic（Publisher，发布频率 500 Hz）
+接口描述
+·     设置回读通道：各对象的 set/get 参数与操作状态，用于确认参数是否真正写入。
+消息类型
+·     类型：fx_interfaces/msg/RobotSG
+消息字段
+·     m_sg_frame_serial（int32）：帧序号，用于跳帧检测
+·     m_head（HeadSg）：头部设置聚合。
+·     m_arms（ArmSg[2]）：数组，元素为 ArmSg 结构；单臂设置聚合：可设置参数 + 附加反馈。
+·     m_body（BodySg）：躯干设置聚合。
+·     m_lift（LiftSg）：升降设置聚合。
+·     m_op_set（OpSet）：操作指令通道：指令号、字符串/int/float 参数与指令序号、返回序号。
+3. 手部数据反馈
+接口名
+·     topic_fbk_get_hands
+接口形式
+·     Topic（Publisher，发布频率 1000 Hz）
+接口描述
+·     手爪反馈通道：左右手各 512 字节裸数据与序号。
+消息类型
+·     类型：fx_interfaces/msg/RobotHands
+消息字段
+·     serial_left_ptr（int32）：左手串口句柄指针
+·     serial_right_ptr（int32）：右手串口句柄指针
+·     data_left（uint8[512]）：左手裸数据缓冲，512 字节
+·     data_right（uint8[512]）：右手裸数据，512 字节
+4. 机器人基础信息上传
+接口名
+·     topic_system_get_robot_info
+接口形式
+·     Topic（Publisher，连接后仅一次）
+接口描述
+·     机器人基础信息：控制器/SDK 版本、各对象自由度、伺服固件与配置版本、传感器版本与序列号。
+消息类型
+·     类型：fx_interfaces/msg/RobotBaseInfo
+消息字段
+·     controller_version（int32）：控制器固件版本号
+·     sdk_version（int32）：SDK 版本号
+·     dof（int32[5]）：自由度数量，按对象顺序给出
+·     servo_firmware_version（StringRow7[5]）：7 维字符串行向量，用于伺服固件版本号。
+·     servo_config_version（UInt32Row7[5]）：7 维 uint32 行向量，与 Int32Row7 配对使用。
+·     sensor_version（Int32Row7[5]）：7 维 int32 行向量，用于伺服配置版本、传感器版本与序列号。
+·     sensor_serial（Int32Row7[5]）：7 维 int32 行向量，用于伺服配置版本、传感器版本与序列号。
+·     physical_state（int32[5]）：对象的物理使用状态：0 未使用 / 1 虚拟 / 2 实物
+·     robot_type（int32）：机型编号，取值见附录 B.7
+·     node_version（string）：节点软件版本号
+二、控制接口（Subscriber Topic）
+下行共 16 个话题，事件驱动：每收到一条消息触发一次 SDK 调用，无节流机制。这些指令只在对象已切换到对应控制模式后生效——模式未就绪时下发的指令不会生效，也不会返回错误，因此调用前应先通过 topic_fbk_get_rt 中的状态字确认当前模式。
+1. 紧急停止
+接口名
+·     topic_runtime_emergency_stop
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     紧急停止。obj_mask 按位指定作用对象，最高优先级，不受当前模式限制。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeEmergencyStop
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_mask（uint32）：对象位掩码，按位选择作用对象（0x01 左臂 / 0x02 右臂 / 0x04 头 / 0x08 躯干 / 0x10 升降）
+2. 关节位置指令设置
+接口名
+·     topic_runtime_set_joint_pos_cmd
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     位置指令，按关节角下发（7 维）。仅在位置类模式下有效。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeSetJointPos
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     pos_cmd（float64[7]）：关节位置指令，7 维，单位 °
+3. 关节位置 PD 指令设置
+接口名
+·     topic_runtime_set_joint_pos_pd_cmd
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     带 PD 的位置指令，适用于对跟踪刚度有要求的场合。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeSetJointPosPD
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     pos_cmd（float64[7]）：关节位置指令，7 维，单位 °
+4. 关节 MIT 指令设置
+接口名
+·     topic_runtime_set_joint_mit_cmd
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     MIT 全参数指令：位置、速度、前馈力矩、刚度、阻尼一次下发。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeSetJointMIT
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     pos_cmd（float64[7]）：关节位置指令，7 维，单位 °
+·     vel_cmd（float64[7]）：关节速度指令，7 维，单位 °/s
+·     tor_cmd（float64[7]）：关节前馈力矩指令，7 维，单位 N·m
+·     k（float64[7]）：刚度（比例）增益，7 维，单位 N·m/°
+·     d（float64[7]）：阻尼（微分）增益，7 维，单位 N·m·s/°
+5. 速度/加速度比例设置
+接口名
+·     topic_runtime_set_speed_ratio
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     运行速度与加速度比例系数，对后续轨迹执行生效。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeSetSpeedRatio
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     vel_ratio（float64）：速度比例系数，0~1
+·     acc_ratio（float64）：加速度比例系数，0~1
+6. 关节刚度阻尼设置
+接口名
+·     topic_runtime_set_joint_kd
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     在线调整关节空间的刚度 K 与阻尼 D。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeSetJointKD
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     k（float64[7]）：刚度（比例）增益，7 维，单位 N·m/°
+·     d（float64[7]）：阻尼（微分）增益，7 维，单位 N·m·s/°
+7. 笛卡尔刚度阻尼设置
+接口名
+·     topic_runtime_set_cart_kd
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     在线调整笛卡尔空间的刚度 K 与阻尼 D。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeSetCartKD
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     k（float64[7]）：刚度（比例）增益，7 维，单位 N·m/°
+·     d（float64[7]）：阻尼（微分）增益，7 维，单位 N·m·s/°
+8. 力控制设置
+接口名
+·     topic_runtime_set_force_ctrl
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     力控制参数：方向分量 3 维 + 力值 + 距离约束，共 5 维。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeSetForceCtrl
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     force_ctrl（float64[5]）：力控制参数，5 维：方向 3 + 力值 + 距离约束
+9. 力矩控制设置
+接口名
+·     topic_runtime_set_torque_ctrl
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     力矩控制参数：方向分量 3 维 + 力矩值 + 作用角度，共 5 维。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeSetTorqueCtrl
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     torque_ctrl（float64[5]）：力矩控制参数，5 维：方向 3 + 力矩值 + 作用角度
+10. PD 增益设置
+接口名
+·     topic_runtime_set_pd
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     PD 模式的比例与微分增益。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeSetPD
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     p（float64[7]）：比例增益，7 维
+·     d（float64[7]）：阻尼（微分）增益，7 维，单位 N·m·s/°
+11. 工具刚度阻尼设置
+接口名
+·     topic_runtime_set_tool_kd
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     工具坐标系的刚度（6 维）与阻尼（10 维）。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeSetToolKD
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     k（float64[6]）：刚度（比例）增益，7 维，单位 N·m/°
+·     d（float64[10]）：阻尼（微分）增益，7 维，单位 N·m·s/°
+12. 标签设置
+接口名
+·     topic_runtime_set_tag
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     指令标记。反馈中回带同一 tag，用于指令与反馈的对位确认。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeSetTag
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     tag（int32）：指令标记，反馈中回带同一 tag，用于指令-反馈对位
+13. 参考姿态设置
+接口名
+·     topic_runtime_set_ref_ori
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     参考姿态设置：ref_ori_type 决定表示方式，ref_ori 为 RPY（°）。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeSetRefOri
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     ref_ori_type（uint8）：参考姿态类型，取值见附录 B.3
+·     ref_ori（float64[3]）：参考姿态 RPY，3 维，单位 °
+14. 轨迹运行
+接口名
+·     topic_runtime_run_traj
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     运行动作已预置的轨迹（配合 service_config_set_traj）。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeRunTraj
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_mask（uint32）：对象位掩码，按位选择作用对象（0x01 左臂 / 0x02 右臂 / 0x04 头 / 0x08 躯干 / 0x10 升降）
+15. 轨迹停止
+接口名
+·     topic_runtime_stop_traj
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     停止正在执行的轨迹。
+消息类型
+·     类型：fx_interfaces/msg/RuntimeStopTraj
+消息字段
+·     thread_id（uint32）：线程 ID，范围 1~7，用于隔离并发的实时指令
+·     obj_mask（uint32）：对象位掩码，按位选择作用对象（0x01 左臂 / 0x02 右臂 / 0x04 头 / 0x08 躯干 / 0x10 升降）
+16. 手部数据设置
+接口名
+·     topic_hand_set_data
+接口形式
+·     Topic（Subscriber）
+接口描述
+·     手爪数据下发：obj_type 区分对象，512 字节裸数据由手爪协议自行解析。
+消息类型
+·     类型：fx_interfaces/msg/HandSetData
+消息字段
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     data（uint8[512]）：定长数据缓冲
+三、服务接口（Service）
+共 72 个服务，按读写性质挂在两个回调组上：查询类（11 个）挂在 Reentrant 回调组，可并发执行；控制类（61 个）挂在 MutuallyExclusive 回调组，同一时刻只允许一个请求执行，天然形成串行队列。所有服务均为同步调用，客户端阻塞等待响应。
+1. 系统类服务（System）
+链路建立与断开、设备信息、时间与网络配置、升级与还原。
+1.1 service_system_link
+接口名
+·     service_system_link
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     与控制器建立 UDP 链路，是整个接口体系可用的前提。成功后实时反馈开始推送。
+服务类型
+·     类型：fx_interfaces/srv/SystemLink
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     ip（uint8[4]）：IPv4 地址，4 字节（如 192.168.1.10 → [192,168,1,10]）
+·     log_level（uint32）：日志级别位掩码（DEBG/INFO/WARN/ERROR）
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_System_Link
+1.2 service_system_unlink
+接口名
+·     service_system_unlink
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     断开 UDP 链路并释放本地资源，之后所有接口调用将返回链路类错误。
+服务类型
+·     类型：fx_interfaces/srv/SystemUnlink
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_System_Unlink
+1.3 service_system_reboot
+接口名
+·     service_system_reboot
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     重启控制器。调用后链路中断，需重新 Link。
+服务类型
+·     类型：fx_interfaces/srv/SystemReboot
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_System_Reboot
+1.4 service_system_update
+接口名
+·     service_system_update
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     使用升级包与 ini 配置文件执行系统升级。
+服务类型
+·     类型：fx_interfaces/srv/SystemUpdate
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     update_file_path（string）：升级包文件路径
+·     ini_file_path（string）：ini 配置文件路径
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_System_Update
+1.5 service_system_set_system_time
+接口名
+·     service_system_set_system_time
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     设置控制器系统时间（年/月/日/时/分/秒）。
+服务类型
+·     类型：fx_interfaces/srv/SystemSetSystemTime
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     year（int32）：年
+·     month（int32）：月
+·     day（int32）：日
+·     hour（int32）：时
+·     minute（int32）：分
+·     second（int32）：秒
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_System_SetSystemTime
+1.6 service_system_get_system_time
+接口名
+·     service_system_get_system_time
+接口形式
+·     Service（可重入（read_group_））
+接口描述
+·     读取控制器系统时间，返回格式化字符串。
+服务类型
+·     类型：fx_interfaces/srv/SystemGetSystemTime
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     time_str（string）：时间字符串
+对应 SDK 接口
+·     FX_L1_System_GetSystemTime
+1.7 service_system_set_system_ip
+接口名
+·     service_system_set_system_ip
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     设置控制器 IPv4 地址，4 字节数组形式。
+服务类型
+·     类型：fx_interfaces/srv/SystemSetSystemIp
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     ip（uint8[4]）：IPv4 地址，4 字节（如 192.168.1.10 → [192,168,1,10]）
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_System_SetSystemIP
+1.8 service_system_get_system_ip
+接口名
+·     service_system_get_system_ip
+接口形式
+·     Service（可重入（read_group_））
+接口描述
+·     读取控制器 IPv4 地址、子网掩码与默认网关。
+服务类型
+·     类型：fx_interfaces/srv/SystemGetSystemIp
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     ip_str（string）：网络配置字符串，含 IP / 掩码 / 网关
+对应 SDK 接口
+·     FX_L1_System_GetSystemIP
+1.9 service_system_restore_image
+接口名
+·     service_system_restore_image
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     使用备份镜像执行整机系统还原，通常用于出厂恢复。
+服务类型
+·     类型：fx_interfaces/srv/SystemRestoreImage
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_System_RestoreImage
+1.10 service_system_set_sn
+接口名
+·     service_system_set_sn
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     写入机器人序列号。
+服务类型
+·     类型：fx_interfaces/srv/SystemSetSn
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     sn_str（string）：机器人序列号字符串
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_System_SetSN
+1.11 service_system_get_sn
+接口名
+·     service_system_get_sn
+接口形式
+·     Service（可重入（read_group_））
+接口描述
+·     读取机器人序列号。
+服务类型
+·     类型：fx_interfaces/srv/SystemGetSn
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     sn_str（string）：机器人序列号字符串
+对应 SDK 接口
+·     FX_L1_System_GetSN
+1.12 service_system_set_user_fbk_type
+接口名
+·     service_system_set_user_fbk_type
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     配置指定通道上报的用户自定义反馈类型（见 USER_FBK_* 枚举）。
+服务类型
+·     类型：fx_interfaces/srv/SystemSetUserFBKType
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     chn_id（int32）：用户反馈通道编号（0~3）
+·     fbk_type（int32）：反馈类型，取值见 USER_FBK_* 枚举
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_System_SetUserFbkType
+1.13 service_system_reset_system_msg
+接口名
+·     service_system_reset_system_msg
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     清空系统消息缓存。
+服务类型
+·     类型：fx_interfaces/srv/SystemResetSystemMSG
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Fbk_ResetSystemMsg
+2. 状态类服务（State）
+控制对象运行模式的状态机入口，以及伺服错误码查询与复位。
+2.1 service_state_get_servo_errorcode
+接口名
+·     service_state_get_servo_errorcode
+接口形式
+·     Service（可重入（read_group_））
+接口描述
+·     读取控制对象 7 个关节的伺服错误码，用于定位具体轴的驱动故障。
+服务类型
+·     类型：fx_interfaces/srv/StateGetServoErrorcode
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     error_code（int32[7]）：错误码
+对应 SDK 接口
+·     FX_L1_State_GetServoErrorCode
+2.2 service_state_reset_error
+接口名
+·     service_state_reset_error
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     清除对象错误状态并恢复到安全状态，同时返回系统级错误码。
+服务类型
+·     类型：fx_interfaces/srv/StateResetError
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     timeout（uint32）：超时时间，单位 ms；超时返回 FUNC_RET_OPERATION_TIMEOUT
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     system_errorcode（uint32）：系统级错误码
+对应 SDK 接口
+·     FX_L1_State_ResetError
+2.3 service_state_switch_to_idle
+接口名
+·     service_state_switch_to_idle
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     切换到空闲态，对象停止接受运动指令。
+服务类型
+·     类型：fx_interfaces/srv/StateSwitchToIdle
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     timeout（uint32）：超时时间，单位 ms；超时返回 FUNC_RET_OPERATION_TIMEOUT
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_State_SwitchToIdle
+2.4 service_state_switch_to_position_mode
+接口名
+·     service_state_switch_to_position_mode
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     切换到位置控制模式，可同时给定速度与加速度比例。
+服务类型
+·     类型：fx_interfaces/srv/StateSwitchToPositionMode
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     timeout（uint32）：超时时间，单位 ms；超时返回 FUNC_RET_OPERATION_TIMEOUT
+·     vel_ratio（float64）：速度比例系数，0~1
+·     acc_ratio（float64）：加速度比例系数，0~1
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_State_SwitchToPositionMode
+2.5 service_state_switch_to_imp_joint_mode
+接口名
+·     service_state_switch_to_imp_joint_mode
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     切换到关节空间阻抗控制，需给定关节刚度 K 与阻尼 D。
+服务类型
+·     类型：fx_interfaces/srv/StateSwitchToImpJointMode
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     timeout（uint32）：超时时间，单位 ms；超时返回 FUNC_RET_OPERATION_TIMEOUT
+·     vel_ratio（float64）：速度比例系数，0~1
+·     acc_ratio（float64）：加速度比例系数，0~1
+·     k（float64[7]）：刚度（比例）增益，7 维，单位 N·m/°
+·     d（float64[7]）：阻尼（微分）增益，7 维，单位 N·m·s/°
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_State_SwitchToImpJointMode
+2.6 service_state_switch_to_imp_cart_mode
+接口名
+·     service_state_switch_to_imp_cart_mode
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     切换到笛卡尔空间阻抗控制，需给定参考姿态、速度比例及刚度阻尼。
+服务类型
+·     类型：fx_interfaces/srv/StateSwitchToImpCartMode
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     timeout（uint32）：超时时间，单位 ms；超时返回 FUNC_RET_OPERATION_TIMEOUT
+·     ref_ori_type（uint8）：参考姿态类型，取值见附录 B.3
+·     ref_ori（float64[3]）：参考姿态 RPY，3 维，单位 °
+·     vel_ratio（float64）：速度比例系数，0~1
+·     acc_ratio（float64）：加速度比例系数，0~1
+·     k（float64[7]）：刚度（比例）增益，7 维，单位 N·m/°
+·     d（float64[7]）：阻尼（微分）增益，7 维，单位 N·m·s/°
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_State_SwitchToImpCartMode
+2.7 service_state_switch_to_imp_force_mode
+接口名
+·     service_state_switch_to_imp_force_mode
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     切换到基于力的阻抗控制，直接给定 5 维力控制量与力矩控制量。
+服务类型
+·     类型：fx_interfaces/srv/StateSwitchToImpForceMode
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     timeout（uint32）：超时时间，单位 ms；超时返回 FUNC_RET_OPERATION_TIMEOUT
+·     ref_ori_type（uint8）：参考姿态类型，取值见附录 B.3
+·     ref_ori（float64[3]）：参考姿态 RPY，3 维，单位 °
+·     force_ctrl（float64[5]）：力控制参数，5 维：方向 3 + 力值 + 距离约束
+·     torque_ctrl（float64[5]）：力矩控制参数，5 维：方向 3 + 力矩值 + 作用角度
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_State_SwitchToImpForceMode
+2.8 service_state_switch_to_pd_mode
+接口名
+·     service_state_switch_to_pd_mode
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     切换到 PD 控制模式，需给定速度/加速度比例与 PD 增益。
+服务类型
+·     类型：fx_interfaces/srv/StateSwitchToPdMode
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     timeout（uint32）：超时时间，单位 ms；超时返回 FUNC_RET_OPERATION_TIMEOUT
+·     vel_ratio（float64）：速度比例系数，0~1
+·     acc_ratio（float64）：加速度比例系数，0~1
+·     p（float64[7]）：比例增益，7 维
+·     d（float64[7]）：阻尼（微分）增益，7 维，单位 N·m·s/°
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_State_SwitchToPDMode
+2.9 service_state_switch_to_drag_joint_mode
+接口名
+·     service_state_switch_to_drag_joint_mode
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     切换到关节空间拖动示教，操作者可直接拖动各关节。
+服务类型
+·     类型：fx_interfaces/srv/StateSwitchToDragJointMode
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     timeout（uint32）：超时时间，单位 ms；超时返回 FUNC_RET_OPERATION_TIMEOUT
+·     k（float64[7]）：刚度（比例）增益，7 维，单位 N·m/°
+·     d（float64[7]）：阻尼（微分）增益，7 维，单位 N·m·s/°
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_State_SwitchToDragJoint
+2.10 service_state_switch_to_drag_cart_mode
+接口名
+·     service_state_switch_to_drag_cart_mode
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     切换到笛卡尔拖动示教，drag_type 选择 X / Y / Z / R 约束方向。
+服务类型
+·     类型：fx_interfaces/srv/StateSwitchToDragCartMode
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     drag_type（int32）：拖动示教类型，取值见附录 B.4
+·     timeout（uint32）：超时时间，单位 ms；超时返回 FUNC_RET_OPERATION_TIMEOUT
+·     ref_ori_type（uint8）：参考姿态类型，取值见附录 B.3
+·     ref_ori（float64[3]）：参考姿态 RPY，3 维，单位 °
+·     k（float64[7]）：刚度（比例）增益，7 维，单位 N·m/°
+·     d（float64[7]）：阻尼（微分）增益，7 维，单位 N·m·s/°
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_State_SwitchToDragCartX、FX_L1_State_SwitchToDragCartY
+2.11 service_state_switch_to_cr_mode
+接口名
+·     service_state_switch_to_cr_mode
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     切换到协作释放模式（零力柔顺），用于人工摆位。
+服务类型
+·     类型：fx_interfaces/srv/StateSwitchToCrMode
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     timeout（uint32）：超时时间，单位 ms；超时返回 FUNC_RET_OPERATION_TIMEOUT
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_State_SwitchToCollaborativeRelease
+2.12 service_state_switch_to_mit_mode
+接口名
+·     service_state_switch_to_mit_mode
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     切换到 MIT 模式：位置-速度-力矩混合的底层关节控制。
+服务类型
+·     类型：fx_interfaces/srv/StateSwitchToMITMode
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     timeout（uint32）：超时时间，单位 ms；超时返回 FUNC_RET_OPERATION_TIMEOUT
+·     k（float64[7]）：刚度（比例）增益，7 维，单位 N·m/°
+·     d（float64[7]）：阻尼（微分）增益，7 维，单位 N·m·s/°
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_State_SwitchToMITMode
+2.13 service_state_switch_to_user_mit_mode
+接口名
+·     service_state_switch_to_user_mit_mode
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     切换到用户自定义 MIT 模式，切换时即给定逐关节 pos/vel/tor/k/d。
+服务类型
+·     类型：fx_interfaces/srv/StateSwitchToUserMITMode
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     timeout（uint32）：超时时间，单位 ms；超时返回 FUNC_RET_OPERATION_TIMEOUT
+·     pos（float64[7]）：关节位置，7 维，单位 °
+·     vel（float64[7]）：速度，单位与上下文相关：规划接口为末端线速度，MIT 为关节速度
+·     tor（float64[7]）：关节前馈力矩，7 维，单位 N·m
+·     k（float64[7]）：刚度（比例）增益，7 维，单位 N·m/°
+·     d（float64[7]）：阻尼（微分）增益，7 维，单位 N·m·s/°
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_State_SwitchToUserMITMode
+3. 参数类服务（Param）
+按名称读写控制器内部参数，是唯一以字符串为键的接口族。
+3.1 service_param_set_int32
+接口名
+·     service_param_set_int32
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     按名称写入 int32 参数。
+服务类型
+·     类型：fx_interfaces/srv/ParamSetInt32
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     name（string）：参数名称字符串，由控制器定义
+·     value（int32）：参数值，类型随接口而定
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Param_SetInt32
+3.2 service_param_set_float
+接口名
+·     service_param_set_float
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     按名称写入 float64 参数。
+服务类型
+·     类型：fx_interfaces/srv/ParamSetFloat
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     name（string）：参数名称字符串，由控制器定义
+·     value（float64）：参数值，类型随接口而定
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Param_SetFloat
+3.3 service_param_get_int32
+接口名
+·     service_param_get_int32
+接口形式
+·     Service（可重入（read_group_））
+接口描述
+·     按名称读取 int32 参数。
+服务类型
+·     类型：fx_interfaces/srv/ParamGetInt32
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     name（string）：参数名称字符串，由控制器定义
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     value（int32）：参数值，类型随接口而定
+对应 SDK 接口
+·     FX_L1_Param_GetInt32
+3.4 service_param_get_float
+接口名
+·     service_param_get_float
+接口形式
+·     Service（可重入（read_group_））
+接口描述
+·     按名称读取 float64 参数。
+服务类型
+·     类型：fx_interfaces/srv/ParamGetFloat
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     name（string）：参数名称字符串，由控制器定义
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     value（float64）：参数值，类型随接口而定
+对应 SDK 接口
+·     FX_L1_Param_GetFloat
+3.5 service_param_get_string
+接口名
+·     service_param_get_string
+接口形式
+·     Service（可重入（read_group_））
+接口描述
+·     按名称读取字符串参数。
+服务类型
+·     类型：fx_interfaces/srv/ParamGetString
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     name（string）：参数名称字符串，由控制器定义
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     value（string）：参数值，类型随接口而定
+对应 SDK 接口
+·     FX_L1_Param_GetString
+4. 配置类服务（Config）
+轴级维护、EtherCAT SDO 直读直写、PD 指令周期与轨迹预置。
+4.1 service_config_axis
+接口名
+·     service_config_axis
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     轴级维护操作，operation_type 选择具体动作：抱闸锁/解锁、编码器零点重置、清编码器错误、轴/传感器偏置重置、关闭软限位。axis_mask 按位指定作用轴。
+服务类型
+·     类型：fx_interfaces/srv/ConfigAxis
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     operation_type（int32）：轴操作类型，见 4.5 节说明
+·     axis_mask（uint8）：轴位掩码，按位指定作用的关节
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Config_SetBrakeLock、FX_L1_Config_SetBrakeUnlock
+4.2 service_config_sdo_read
+接口名
+·     service_config_sdo_read
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     通过 EtherCAT SDO 读取从站对象字典，data_type 决定读取长度与符号，结果以 32 字节原始数据返回。
+服务类型
+·     类型：fx_interfaces/srv/ConfigSDORead
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     master_id（int32）：EtherCAT 主站编号
+·     slave_pos（int32）：EtherCAT 从站位置
+·     object_index（uint32）：对象字典索引（Index）
+·     object_subindex（uint32）：对象字典子索引（SubIndex）
+·     data_type（int32）：数据类型，决定读取长度与符号，取值见 FXUserDataType
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     data（uint8[32]）：定长数据缓冲
+对应 SDK 接口
+·     FX_L1_Config_SdoReadInt8、FX_L1_Config_SdoReadUInt8
+4.3 service_config_sdo_write
+接口名
+·     service_config_sdo_write
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     通过 EtherCAT SDO 写入从站对象字典，数据以 32 字节定长数组传输。
+服务类型
+·     类型：fx_interfaces/srv/ConfigSDOWrite
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     master_id（int32）：EtherCAT 主站编号
+·     slave_pos（int32）：EtherCAT 从站位置
+·     object_index（uint32）：对象字典索引（Index）
+·     object_subindex（uint32）：对象字典子索引（SubIndex）
+·     data_type（int32）：数据类型，决定读取长度与符号，取值见 FXUserDataType
+·     data（uint8[32]）：定长数据缓冲
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Config_SdoWriteInt8、FX_L1_Config_SdoWriteUInt8
+4.4 service_config_set_pd_cycle_time
+接口名
+·     service_config_set_pd_cycle_time
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     设置 PD 模式下的指令下发周期（单位 ms）。
+服务类型
+·     类型：fx_interfaces/srv/ConfigSetPDCycleTime
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     cycle_time（int32）：指令下发周期，单位 ms
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Config_SetPDCmdCycleTime
+4.5 service_config_get_pd_cycle_time
+接口名
+·     service_config_get_pd_cycle_time
+接口形式
+·     Service（可重入（read_group_））
+接口描述
+·     读取 PD 模式下的指令下发周期（单位 ms）。
+服务类型
+·     类型：fx_interfaces/srv/ConfigGetPDCycleTime
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     cycle_time（int32）：指令下发周期，单位 ms
+对应 SDK 接口
+·     FX_L1_Config_GetPDCmdCycleTime
+4.6 service_config_set_traj
+接口名
+·     service_config_set_traj
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     预置轨迹数据，配合 topic_runtime_run_traj 执行。
+服务类型
+·     类型：fx_interfaces/srv/ConfigSetTraj
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     point_data（float64[]）：轨迹点数据（扁平化数组）
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Config_SetTraj
+4.7 service_config_set_interference
+接口名
+·     service_config_set_interference
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     开启或关闭干涉（碰撞）检查模块。开启前需已加载干涉配置文件。
+服务类型
+·     类型：fx_interfaces/srv/ConfigSetInterference
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     enable（bool）：使能标志，true 开启，false 关闭
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Config_SetInterferenceEnable、FX_L1_Config_SetInterferenceDisable
+5. 终端类服务（Terminal）
+与末端外设之间的透传通道，按通道类型收发定长数据帧。
+5.1 service_terminal_clear_data
+接口名
+·     service_terminal_clear_data
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     清空指定对象的终端通信缓冲区。
+服务类型
+·     类型：fx_interfaces/srv/TerminalClearData
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Terminal_ClearData
+5.2 service_terminal_get_data
+接口名
+·     service_terminal_get_data
+接口形式
+·     Service（可重入（read_group_））
+接口描述
+·     从终端接收一帧数据，返回通道类型、64 字节数据与接收时间。
+服务类型
+·     类型：fx_interfaces/srv/TerminalGetData
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     timeout（uint32）：超时时间，单位 ms；超时返回 FUNC_RET_OPERATION_TIMEOUT
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     chn_type（int32）：通道类型，取值见附录 B.6
+·     data（uint8[64]）：定长数据缓冲
+·     receving_time（uint32）：数据接收时间戳
+对应 SDK 接口
+·     FX_L1_Terminal_GetData
+5.3 service_terminal_set_data
+接口名
+·     service_terminal_set_data
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     向终端发送一帧数据，返回发送时间戳。
+服务类型
+·     类型：fx_interfaces/srv/TerminalSetData
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+·     timeout（uint32）：超时时间，单位 ms；超时返回 FUNC_RET_OPERATION_TIMEOUT
+·     chn_type（int32）：通道类型，取值见附录 B.6
+·     data（uint8[64]）：定长数据缓冲
+·     data_len（uint32）：有效数据长度（字节）
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     sending_time（uint32）：数据发送时间戳
+对应 SDK 接口
+·     FX_L1_Terminal_SetData
+6. 手部类服务（Hand）
+手爪类型识别。手爪数据通道由 topic_hand_set_data 承担。
+6.1 service_hand_get_type
+接口名
+·     service_hand_get_type
+接口形式
+·     Service（可重入（read_group_））
+接口描述
+·     读取末端手爪类型标识，用于选择对应的数据解析方式。
+服务类型
+·     类型：fx_interfaces/srv/HandGetType
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     obj_type（uint8）：控制对象类型，取值见附录 B.1
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     hand_type（int32）：手爪类型标识
+对应 SDK 接口
+·     FX_L1_Hand_GetType
+7. 反馈类服务（Fbk）
+读取控制器产生的系统提示与告警文本。
+7.1 service_feedback_get_system_msg
+接口名
+·     service_feedback_get_system_msg
+接口形式
+·     Service（可重入（read_group_））
+接口描述
+·     读取当前系统消息文本（告警、提示、状态变化）。
+服务类型
+·     类型：fx_interfaces/srv/FeedbackGetSystemMsg
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     msg（string）：系统消息文本
+对应 SDK 接口
+·     FX_L1_Fbk_GetSystemMsg
+8. 负载辨识类服务（ToolDyn）
+基于激励轨迹采样辨识末端负载的质量、质心与惯量。
+8.1 service_tool_dyn_start_sampling
+接口名
+·     service_tool_dyn_start_sampling
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     异步启动负载辨识采样任务，需指定机械臂、负载编号与激励轨迹文件。
+服务类型
+·     类型：fx_interfaces/srv/ToolDynStartSampling
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     arm（int32）：机械臂编号，0 左臂，1 右臂
+·     load_code（int32）：负载编号，用于区分多组辨识结果
+·     traj_file_path（string）：激励轨迹文件路径
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_ToolDyn_Start_Sampling
+8.2 service_tool_dyn_get_sampling_status
+接口名
+·     service_tool_dyn_get_sampling_status
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     查询辨识任务状态、进度百分比与错误码。
+服务类型
+·     类型：fx_interfaces/srv/ToolDynGetSamplingStatus
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     id_handle（uint8）：任务句柄标识，由启动接口返回
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     status（uint8）：任务状态：0 空闲 / 1 采样中 / 2 完成 / 3 失败
+·     progress（int32）：进度百分比，0~100
+·     error_code（int32）：错误码
+对应 SDK 接口
+·     FX_ToolDyn_Get_Sampling_Status
+8.3 service_tool_dyn_stop_sampling
+接口名
+·     service_tool_dyn_stop_sampling
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     请求停止辨识任务；接口异步返回，需等待任务实际停止。
+服务类型
+·     类型：fx_interfaces/srv/ToolDynStopSampling
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     id_handle（uint8）：任务句柄标识，由启动接口返回
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_ToolDyn_Stop_Sampling
+8.4 service_tool_dyn_destroy_sampling
+接口名
+·     service_tool_dyn_destroy_sampling
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     销毁任务句柄并释放资源，应在任务结束后调用。
+服务类型
+·     类型：fx_interfaces/srv/ToolDynDestroySampling
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     id_handle（uint8）：任务句柄标识，由启动接口返回
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_ToolDyn_Destroy_Sampling
+8.5 service_tool_dyn_run_load_identification
+接口名
+·     service_tool_dyn_run_load_identification
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     执行负载辨识主流程，返回辨识得到的质量、质心与惯量参数。
+服务类型
+·     类型：fx_interfaces/srv/ToolDynRunLoadIdentification
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     arm（int32）：机械臂编号，0 左臂，1 右臂
+·     traj_file_path（string）：激励轨迹文件路径
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     error_code（int32）：错误码
+·     out_dynpara（LoadDynamicPara）：辨识结果，结构见 5.2 节 LoadDynamicPara
+对应 SDK 接口
+·     FX_ToolDyn_Run_Load_Identification
+9. 运动学类服务（Kinematics）
+运动学环境初始化、正逆解与雅可比、轨迹规划。
+9.1 环境初始化与坐标系配置
+9.1.1 service_kinematics_set_log_level
+接口名
+·     service_kinematics_set_log_level
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     设置运动学模块的日志级别，用于问题定位。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsSetLogLevel
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     log_level（uint8）：日志级别位掩码（DEBG/INFO/WARN/ERROR）
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Kinematics_SetLogLevel
+9.1.2 service_kinematics_init_single_arm_by_input_params
+接口名
+·     service_kinematics_init_single_arm_by_input_params
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     使用输入参数初始化单臂运动学环境：DH 表、PNVA 表、关节限位、重力向量、连杆质量/质心/惯量。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsInitSingleArmByInputParams
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     robot_serial（int32）：手臂编号，0 为左臂，1 为右臂
+·     type（int32）：类型标识，含义随接口而定（机器人类型 / 参数类型）
+·     dh（Float64Row4[8]）：DH 参数表，8 行 × 4 列
+·     pnva（Float64Row4[8]）：PNVA 参数表，8 行 × 4 列
+·     bound（Float64Row3[4]）：关节限位表，4 行 × 3 列
+·     grv（float64[3]）：重力向量，3 维
+·     mass（float64[7]）：连杆质量，7 维，单位 kg
+·     mcp（Float64Row3[7]）：连杆质心，7 行 × 3 列，单位 m
+·     i（Float64Row6[7]）：连杆惯量，7 行 × 6 列
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Kinematics_InitSingleArm_ByInputParams
+9.1.3 service_kinematics_init_single_arm_by_ini_config
+接口名
+·     service_kinematics_init_single_arm_by_ini_config
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     使用控制器 ini 中的默认参数初始化单臂运动学环境，要求已连接机器人。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsInitSingleArmByIniConfig
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     robot_serial（int32）：手臂编号，0 为左臂，1 为右臂
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Kinematics_InitSingleArm_ByIniConfig
+9.1.4 service_kinematics_set_tool
+接口名
+·     service_kinematics_set_tool
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     设置工具相对法兰的 4×4 齐次变换矩阵。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsSetTool
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     robot_serial（int32）：手臂编号，0 为左臂，1 为右臂
+·     tool（Float64Row4[4]）：工具变换矩阵，4×4
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Kinematics_SetTool
+9.1.5 service_kinematics_remove_tool
+接口名
+·     service_kinematics_remove_tool
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     清除已设置的工具变换，恢复默认。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsRemoveTool
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     robot_serial（int32）：手臂编号，0 为左臂，1 为右臂
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Kinematics_RemoveTool
+9.1.6 service_kinematics_set_user_frame
+接口名
+·     service_kinematics_set_user_frame
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     设置用户坐标系相对基座的 4×4 齐次变换矩阵。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsSetUserFrame
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     robot_serial（int32）：手臂编号，0 为左臂，1 为右臂
+·     userframe（Float64Row4[4]）：用户坐标系变换矩阵，4×4
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Kinematics_SetUserFrame
+9.1.7 service_kinematics_remove_user_frame
+接口名
+·     service_kinematics_remove_user_frame
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     清除已设置的用户坐标系，恢复默认。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsRemoveUserFrame
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     robot_serial（int32）：手臂编号，0 为左臂，1 为右臂
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Kinematics_RemoveUserFrame
+9.1.8 service_kinematics_set_skye_body_condition
+接口名
+·     service_kinematics_set_skye_body_condition
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     设置 Skye（MAX）躯干运动学参数：标准躯干位、躯干刚度、双臂长度基准与系数。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsSetSkyeBodyCondition
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     std_body（float64[3]）：标准躯干位，3 维
+·     k_body（float64[3]）：躯干刚度系数，3 维
+·     std_arm0_len（float64）：左臂长度基准值
+·     k_arm0（float64）：左臂长度系数
+·     std_arm1_len（float64）：右臂长度基准值
+·     k_arm1（float64）：右臂长度系数
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Kinematics_SetSkyeBodyCondition
+9.2 单臂解算
+9.2.1 service_kinematics_forward_kinematics
+接口名
+·     service_kinematics_forward_kinematics
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     单臂正解：7 个关节角 → 4×4 位姿矩阵（4 组，供多解与中间坐标系使用）。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsForwardKinematics
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     robot_serial（int32）：手臂编号，0 为左臂，1 为右臂
+·     joints（float64[7]）：关节角，7 维，单位 °
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     pose_matrix（Float64Row4[4]）：4×4 位姿矩阵，按行拆分传递
+对应 SDK 接口
+·     FX_L1_Kinematics_ForwardKinematics
+9.2.2 service_kinematics_jacobian
+接口名
+·     service_kinematics_jacobian
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     单臂雅可比求解，返回 6×7 雅可比矩阵。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsJacobian
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     robot_serial（int32）：手臂编号，0 为左臂，1 为右臂
+·     joints（float64[7]）：关节角，7 维，单位 °
+·     jacobian（Float64Row7[6]）：雅可比矩阵，6×7，按行拆分传递
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     jacobian（Float64Row7[6]）：雅可比矩阵，6×7，按行拆分传递
+对应 SDK 接口
+·     FX_L1_Kinematics_Jacobian
+9.2.3 service_kinematics_inverse_kinematics
+接口名
+·     service_kinematics_inverse_kinematics
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     单臂逆解：给定目标 TCP 位姿与参考关节角，返回关节解、多解数量、超限标志与关节限位信息。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsInverseKinematics
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     robot_serial（int32）：手臂编号，0 为左臂，1 为右臂
+·     params（FxInvKineSolvePara）：参数包，结构见 5.2 节 FxInvKineSolvePara
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     params（FxInvKineSolvePara）：参数包，结构见 5.2 节 FxInvKineSolvePara
+对应 SDK 接口
+·     FX_L1_Kinematics_InverseKinematics
+9.3 躯干解算（Skye / Luna）
+9.3.1 service_kinematics_skye_body_forward_kinematics
+接口名
+·     service_kinematics_skye_body_forward_kinematics
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     Skye 躯干正解：3 个躯干关节 → 左右肩 4×4 位姿矩阵。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsSkyeBodyForwardKinematics
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     jv（float64[3]）：躯干关节角，3 维
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     arm0_shoulder_matrix（Float64Row4[4]）：左肩位姿矩阵，4×4
+·     arm1_shoulder_matrix（Float64Row4[4]）：右肩位姿矩阵，4×4
+对应 SDK 接口
+·     FX_L1_Kinematics_SkyeBodyForwardKinematics
+9.3.2 service_kinematics_skye_body_inverse_kinematics
+接口名
+·     service_kinematics_skye_body_inverse_kinematics
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     Skye 躯干反解：由左右臂 TCP 位置反算躯干 3 个关节角。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsSkyeBodyInverseKinematics
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     arm0_tcp（float64[3]）：左臂 TCP 坐标，3 维，单位 m
+·     arm1_tcp（float64[3]）：右臂 TCP 坐标，3 维，单位 m
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     out_body_joints（float64[3]）：躯干关节角解，3 维
+对应 SDK 接口
+·     FX_L1_Kinematics_SkyeBodyInverseKinematics
+9.3.3 service_kinematics_skye_body_inverse_kinematics_with_ref
+接口名
+·     service_kinematics_skye_body_inverse_kinematics_with_ref
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     Skye 躯干反解（带参考位姿）：在参考躯干位姿附近优选解，避免跳变。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsSkyeBodyInverseKinematicsWithRef
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     ref_body_joints（float64[3]）：参考躯干关节角，3 维
+·     arm0_tcp（float64[3]）：左臂 TCP 坐标，3 维，单位 m
+·     arm1_tcp（float64[3]）：右臂 TCP 坐标，3 维，单位 m
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     out_body_joints（float64[3]）：躯干关节角解，3 维
+对应 SDK 接口
+·     FX_L1_Kinematics_SkyeBodyInverseKinematicsWithRef
+9.3.4 service_kinematics_luna_body_init_by_ini_config
+接口名
+·     service_kinematics_luna_body_init_by_ini_config
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     使用 ini 默认参数初始化 Luna 躯干运动学环境，要求已连接机器人。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsLunaBodyInitByIniConfig
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Kinematics_LunaBodyInit_ByIniConfig
+9.3.5 service_kinematics_luna_body_init_by_input_params
+接口名
+·     service_kinematics_luna_body_init_by_input_params
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     使用输入参数初始化 Luna 躯干运动学环境：DH 表、法兰长度、关节上下限。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsLunaBodyInitByInputParams
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     dh_params（Float64Row4[6]）：躯干 DH 参数表，6 行 × 4 列
+·     flange_length（float64）：法兰长度
+·     joint_limit_neg（float64[6]）：关节下限，6 维，单位 °
+·     joint_limit_pos（float64[6]）：关节上限，6 维，单位 °
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Kinematics_LunaBodyInit_ByInputParams
+9.3.6 service_kinematics_luna_body_forward_kinematics
+接口名
+·     service_kinematics_luna_body_forward_kinematics
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     Luna 躯干正解：6 个躯干关节 → 左右肩 4×4 位姿矩阵。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsLunaBodyForwardKinematics
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     jv（float64[6]）：躯干关节角，3 维
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     arm0_shoulder_matrix（Float64Row4[4]）：左肩位姿矩阵，4×4
+·     arm1_shoulder_matrix（Float64Row4[4]）：右肩位姿矩阵，4×4
+对应 SDK 接口
+·     FX_L1_Kinematics_LunaBodyForwardKinematics
+9.3.7 service_kinematics_luna_body_inverse_kinematics
+接口名
+·     service_kinematics_luna_body_inverse_kinematics
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     Luna 躯干反解：由左右肩 4×4 矩阵反算 6 个躯干关节角。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsLunaBodyInverseKinematics
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     arm0_shoulder_matrix（Float64Row4[4]）：左肩位姿矩阵，4×4
+·     arm1_shoulder_matrix（Float64Row4[4]）：右肩位姿矩阵，4×4
+·     luna_body_ref_joints（float64[6]）：Luna 躯干参考关节角，6 维
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     luna_body_result_joints（float64[6]）：Luna 躯干解算关节角，6 维
+对应 SDK 接口
+·     FX_L1_Kinematics_LunaBodyInverseKinematics
+9.4 轨迹规划
+9.4.1 service_kinematics_plan_joint_move
+接口名
+·     service_kinematics_plan_joint_move
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     关节空间 MoveJ 规划，返回轨迹点集句柄与点数。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsPlanJointMove
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     robot_serial（int32）：手臂编号，0 为左臂，1 为右臂
+·     start_joints（float64[7]）：起始关节角，7 维，单位 °
+·     end_joints（float64[7]）：目标关节角，7 维，单位 °
+·     vel_ratio（float64）：速度比例系数，0~1
+·     acc_ratio（float64）：加速度比例系数，0~1
+·     freq（int32）：插补频率，单位 Hz
+·     point_set_handle（float64[]）：轨迹点集句柄，由规划接口返回，通过下标访问
+·     point_num（int32）：轨迹点数（输入为容量，输出为实际点数）
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     point_set_handle（float64[]）：轨迹点集句柄，由规划接口返回，通过下标访问
+·     point_num（int32）：轨迹点数（输入为容量，输出为实际点数）
+对应 SDK 接口
+·     FX_L1_Kinematics_PlanJointMove
+9.4.2 service_kinematics_plan_linear_move_keep_joints
+接口名
+·     service_kinematics_plan_linear_move_keep_joints
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     保持关节姿态的直线（MoveL）规划，用于末端走直线但姿态随动。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsPlanLinearMoveKeepJoints
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     robot_serial（int32）：手臂编号，0 为左臂，1 为右臂
+·     start_joints（float64[7]）：起始关节角，7 维，单位 °
+·     end_joints（float64[7]）：目标关节角，7 维，单位 °
+·     vel（float64）：速度，单位与上下文相关：规划接口为末端线速度，MIT 为关节速度
+·     acc（float64）：加速度
+·     freq（int32）：插补频率，单位 Hz
+·     point_set_handle（float64[]）：轨迹点集句柄，由规划接口返回，通过下标访问
+·     point_num（int32）：轨迹点数（输入为容量，输出为实际点数）
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     point_set_handle（float64[]）：轨迹点集句柄，由规划接口返回，通过下标访问
+·     point_num（int32）：轨迹点数（输入为容量，输出为实际点数）
+对应 SDK 接口
+·     FX_L1_Kinematics_PlanLinearMoveKeepJoints
+9.4.3 service_kinematics_plan_linear_move_multi_points_set_start
+接口名
+·     service_kinematics_plan_linear_move_multi_points_set_start
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     启动多段连续直线规划并提交首段，指定起止位姿、过渡半径、ZSP 类型与速度加速度。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsPlanLinearMoveMultiPointsSetStart
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     robot_serial（int32）：手臂编号，0 为左臂，1 为右臂
+·     ref_joints（float64[7]）：参考关节角，7 维；逆解以此为优选依据，避免关节跳变
+·     start_xyzabc（float64[6]）：起始位姿 xyzabc，位置单位 m，姿态单位 °
+·     end_xyzabc（float64[6]）：目标位姿 xyzabc，位置单位 m，姿态单位 °
+·     allow_range（float64）：过渡允许范围，用于多段直线的拐角过渡
+·     zsp_type（int32）：过渡（ZSP）类型
+·     zsp_para（float64[6]）：过渡参数，6 维
+·     vel（float64）：速度，单位与上下文相关：规划接口为末端线速度，MIT 为关节速度
+·     acc（float64）：加速度
+·     freq（int32）：插补频率，单位 Hz
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Kinematics_PlanLinearMove_MultiPoints_SetStart
+9.4.4 service_kinematics_plan_linear_move_multi_points_set_next_points
+接口名
+·     service_kinematics_plan_linear_move_multi_points_set_next_points
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     向已启动的多段直线序列追加下一段目标位姿。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsPlanLinearMoveMultiPointsSetNextPoints
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     robot_serial（int32）：手臂编号，0 为左臂，1 为右臂
+·     next_xyzabc（float64[6]）：下一段目标位姿 xyzabc，位置单位 m，姿态单位 °
+·     allow_range（float64）：过渡允许范围，用于多段直线的拐角过渡
+·     zsp_type（int32）：过渡（ZSP）类型
+·     zsp_para（float64[6]）：过渡参数，6 维
+·     vel（float64）：速度，单位与上下文相关：规划接口为末端线速度，MIT 为关节速度
+·     acc（float64）：加速度
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+对应 SDK 接口
+·     FX_L1_Kinematics_PlanLinearMove_MultiPoints_SetNextPoints
+9.4.5 service_kinematics_plan_linear_move_multi_points_get_points
+接口名
+·     service_kinematics_plan_linear_move_multi_points_get_points
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     导出多段直线规划生成的完整路径点集与点数。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsPlanLinearMoveMultiPointsGetPoints
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     point_set_handle（float64[]）：轨迹点集句柄，由规划接口返回，通过下标访问
+·     point_num（int32）：轨迹点数（输入为容量，输出为实际点数）
+对应 SDK 接口
+·     FX_L1_Kinematics_PlanLinearMove_MultiPoints_GetPoints
+9.4.6 service_kinematics_arms_synchronous_planning
+接口名
+·     service_kinematics_arms_synchronous_planning
+接口形式
+·     Service（互斥（control_group_））
+接口描述
+·     双机械臂同步直线规划（躯干位姿固定），两臂轨迹点数保持一致。
+服务类型
+·     类型：fx_interfaces/srv/KinematicsArmsSynchronousPlanning
+请求字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     params（ArmsSynchronousPlanningParams）：参数包，结构见 5.2 节 FxInvKineSolvePara
+·     arm0_point_set（float64[]）：左臂轨迹点集
+·     arm1_point_set（float64[]）：右臂轨迹点集
+·     point_num（int32）：轨迹点数（输入为容量，输出为实际点数）
+响应字段
+·     id_request（uint32）：请求序号，由客户端生成，服务端原样回填，用于匹配请求与响应
+·     result（int32）：返回码，0 表示成功，负值含义见附录 A
+·     arm0_point_set（float64[]）：左臂轨迹点集
+·     arm1_point_set（float64[]）：右臂轨迹点集
+·     point_num（int32）：轨迹点数（输入为容量，输出为实际点数）
+对应 SDK 接口
+·     FX_L0_CPointSet_Create、FX_L0_CPointSet_Destroy
+4.
+接口统计总览
+表 4-1　接口数量统计
+类别
+数量
+说明
+数据上传 Topic（Publisher）
+4
+RobotRT / RobotSG / RobotHands / RobotBaseInfo，频率 500~1000 Hz 或单次
+控制 Topic（Subscriber）
+16
+Runtime 系列 15 个 + 手爪数据 1 个
+System 服务
+13
+链路建立/断开、重启、升级、时间与 IP、序列号、用户反馈类型、系统消息复位
+State 服务
+13
+伺服错误码查询与复位、9 种控制模式切换（含拖拽/阻抗/MIT/PD）
+Param 服务
+5
+int32 / float64 / string 参数读写
+Config 服务
+7
+轴级维护、SDO 读写、PD 周期、轨迹预置、干涉检查
+Terminal 服务
+3
+终端数据收发与缓冲清除
+Hand 服务
+1
+手爪类型识别
+Fbk 服务
+1
+系统消息读取
+ToolDyn 服务
+5
+采样任务全生命周期 + 负载辨识主流程
+Kinematics 服务
+24
+环境初始化与坐标系、单臂正逆解与雅可比、躯干解算、轨迹规划
+合计
+92
+Topic 20 个 +   Service 72 个
+附录 A　返回码定义
+result 与 error_code 字段的取值定义自 FXFuncReturn 枚举，分三组：通用业务（-1 ~ -30）、运动学专用（-1000 ~ -1099）、负载辨识扩展（-1031 ~ -1039）。
+表 A-1　通用返回码
+值
+含义
+0
+成功
+-1
+通用操作失败
+-2
+通信链路建立失败
+-3
+对端无响应
+-4
+版本不兼容
+-5
+入参非法
+-6
+前置条件不满足（未连接、模式不符等）
+-7
+文件发送失败
+-8
+文件接收失败
+-9
+对象类型非法
+-10
+操作超时
+-11
+参数设置失败
+-12
+参数读取失败
+-13
+参数保存失败
+-14
+终端标识非法
+-15
+参数配置非法
+-16
+等待通信就绪超时
+-17
+数据发送失败
+-18
+等待应答超时
+-19
+指令组包失败
+-20
+机型不支持
+-21
+手爪类型不支持
+-22
+控制器已被其他客户端占用
+-23
+thread_id 非法（范围 1~7）
+-24
+注册的采样项过多
+-25
+采样项非法
+-26
+采样数据长度非法
+-27
+调用过程中链路断开
+-28
+PDO 数据未就绪
+-29
+超出负载位置限制
+-30
+机器人位置受干涉
+表 A-2　运动学与辨识专用返回码
+值
+含义
+-1000
+运动学环境未初始化
+-1001
+运动学环境初始化失败
+-1002
+工具变换更新失败
+-1010
+逆解目标不可达或处于奇异位形
+-1011
+逆解结果超出关节限位
+-1020
+轨迹规划失败
+-1021
+规划轨迹超出关节限位
+-1022
+规划目标不可达
+-1023
+轨迹点数超出上限
+-1024
+双臂同步规划点数不一致
+-1030
+动力学辨识失败
+-1031
+负载辨识计算错误
+-1032
+采样文件打开失败
+-1033
+配置文件打开失败
+-1034
+采样过程错误
+-1035
+负载辨识类型非法
+-1036
+轨迹文件不存在或路径错误
+-1037
+采样保存目录不存在
+-1038
+采样配置失败
+-1039
+轨迹操作失败
+-1099
+运动学或规划内部错误
+附录 B　枚举定义
+以下枚举在 Topic 与 Service 中以整数传输，取值直接对应 SDK 的枚举定义。
+B.1　控制对象 FXObjType
+枚举
+值
+含义
+位掩码
+FX_OBJ_ARM0
+0
+左臂
+0x01
+FX_OBJ_ARM1
+1
+右臂
+0x02
+FX_OBJ_HEAD
+2
+头部
+0x04
+FX_OBJ_BODY
+3
+躯干
+0x08
+FX_OBJ_LIFT
+4
+升降
+0x10
+B.2　全局状态 FXStateType
+枚举
+值
+含义
+枚举
+值
+含义
+FX_STATE_IDLE
+0
+空闲
+FX_STATE_DRAG_CART_R
+9
+旋转拖动
+FX_STATE_POSITION
+1
+位置控制
+FX_STATE_RELEASE
+10
+协作释放
+FX_STATE_IMP_JOINT
+2
+关节阻抗
+FX_STATE_PD
+11
+PD 控制
+FX_STATE_IMP_CART
+3
+笛卡尔阻抗
+FX_STATE_MIT
+12
+MIT 控制
+FX_STATE_IMP_FORCE
+4
+力控阻抗
+FX_STATE_USER_MIT
+13
+用户自定义 MIT
+FX_STATE_DRAG_JOINT
+5
+关节拖动示教
+FX_STATE_ERROR
+100
+错误
+FX_STATE_DRAG_CART_X
+6
+X 向拖动
+FX_STATE_TRANSFERRING
+101
+状态切换中
+FX_STATE_DRAG_CART_Y
+7
+Y 向拖动
+FX_STATE_UNKNOWN
+200
+未知
+FX_STATE_DRAG_CART_Z
+8
+Z 向拖动
+B.3　参考姿态类型 FXRefOriType
+枚举
+值
+含义
+FX_REFORI_TYPE_NULL
+0
+不启用参考姿态
+FX_REFORI_TYPE_ANYBASE
+1
+用户自定义姿态
+FX_REFORI_TYPE_TCP
+2
+TCP 姿态
+B.4　拖动示教类型 FXDragType
+枚举
+值
+含义
+FX_DRAG_TYPE_NULL
+0
+拖动示教关闭
+FX_DRAG_TYPE_JOINT
+1
+关节空间拖动
+FX_DRAG_TYPE_CART_X
+2
+笛卡尔 X 轴拖动
+FX_DRAG_TYPE_CART_Y
+3
+笛卡尔 Y 轴拖动
+FX_DRAG_TYPE_CART_Z
+4
+笛卡尔 Z 轴拖动
+FX_DRAG_TYPE_CART_R
+5
+旋转拖动
+B.5　阻抗控制类型 FXImpType
+枚举
+值
+含义
+FX_IMP_TYPE_NULL
+0
+无阻抗控制
+FX_IMP_TYPE_JOINT
+1
+关节空间阻抗
+FX_IMP_TYPE_CART
+2
+笛卡尔空间阻抗
+FX_IMP_TYPE_FORCE
+3
+力控阻抗
+FX_IMP_TYPE_PD
+4
+PD 控制
+B.6　通信通道类型 FXChnType
+枚举
+值
+含义
+FX_CHN_CANFD
+1
+CAN FD 通道
+FX_CHN_485A
+2
+RS485 A 通道
+FX_CHN_485B
+3
+RS485 B 通道
+B.7　机型 FXRobotType
+枚举
+值
+含义
+FX_ROBOT_NULL
+0
+无效类型
+FX_ROBOT_MARVIN_PRO
+1
+MarvinPro
+FX_ROBOT_GENTO_SKYE
+2
+Gento Skye
+FX_ROBOT_GENTO_LUNA
+3
+Gento Luna
+﻿
+
+
+LINKS

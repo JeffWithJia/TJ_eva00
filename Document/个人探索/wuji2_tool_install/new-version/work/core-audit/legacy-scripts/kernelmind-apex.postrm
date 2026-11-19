@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e
+
+case "${1:-}" in
+    remove|purge)
+        # Generated runtime state is not tracked by dpkg.
+        rm -rf /opt/kernelmind/venv
+        rm -f /etc/systemd/system/apex-backend-host-control.service \
+            /usr/local/libexec/apex/apex_backend_host_control.py \
+            /etc/apex/backend-container.env
+        rm -rf /usr/local/share/apex/backend-docker
+        systemctl daemon-reload 2>/dev/null || true
+        ;;
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        # The new postinst performs the transactional image/unit switch.
+        ;;
+esac
+
+exit 0

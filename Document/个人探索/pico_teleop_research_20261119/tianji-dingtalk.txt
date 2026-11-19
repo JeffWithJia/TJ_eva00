@@ -1,0 +1,96 @@
+
+遥操使用说明文档
+        :root, [data-we-color-scheme=&quot;light&quot;], [data-dingtalk-theme=&quot;light&quot;] {
+          --cangjie_black1:rgba(0,0,0,1);--cangjie_white1:rgba(255,255,255,1);--cangjie_blue1:rgba(63, 133, 255, 1);--cangjie_selection:rgba(1, 134, 251, 0.3);--cangjie_inactive_selection:rgba(136, 136, 136, 0.3);--cangjie_placeholder:rgba(23, 26, 29, 0.4)
+        }
+        [data-we-color-scheme=&quot;dark&quot;], [data-dingtalk-theme=&quot;dark&quot;] {
+          --cangjie_black1:rgba(0,0,0,1);--cangjie_white1:rgba(255,255,255,1);--cangjie_blue1:#3978E5;--cangjie_selection:rgba(1, 134, 251, 0.3);--cangjie_inactive_selection:rgba(136, 136, 136, 0.3);--cangjie_placeholder:rgba(255, 255, 255, 0.4)
+        }
+1.
+产品说明
+我们提供基于VR套件进行机器人遥操作，支持多种机器人型号；并且同时提供面向机器人模仿学习数据集的转换工具链；您可以通过VR遥操作套件采集到相机数据，采用我们提供的转换工具链（KM Data Converter）生成数据集，再通过数据集到模型训练到真机推理的完整流程。
+2.
+产品获取
+如果您采购了我们的摇操套件，我们会提前安装好软件程序，收到货即可快速上手。
+3.
+核心功能
+●
+VR 沉浸式遥操作 - 通过 VR 头显提供第一视角实时画面，实现低延迟的机器人精细作业控制
+●
+多机型支持 - 兼容 Marvin、Gento机器人系列，统一部署流程
+●
+开放扩展 - 提供 ROS2 SDK 和多平台上位机软件，可选接入 Manus 数据手套和Wuji Hand，快速对接现有 ROS 2 系统
+4.
+软件架构
+●
+前端：我们提供上位机软件，基于ROS，支持Ubuntu、Windows平台；用于连接后端、启动机器人、切换模式、录制和回放数据等，可自行安装在自己的PC电脑上，机器人域控制器也提前预装好了该上位机软件
+●
+后端：运行在AI处理器上，提供 ROS 2 节点、运动控制、相机与录制服务等
+●
+VR头显：我们支持 Meta Quest 和 Pico 头显，并提供相应的VR 遥操作APP，已提前预装好在VR设备中，在开始遥操作之前，请访问详细文档查看穿戴说明
+5.
+具体文档操作内容
+主文档链接：https://gento-teleoperation-apex.github.io/Apex_doc_center/﻿
+5.1
+Marvin Pro系列
+详细操作链接：https://gento-teleoperation-apex.github.io/Apex_doc_center/pro/new-id/getting-started/startup-debugging﻿
+5.2
+Gento系列
+详细操作链接：https://gento-teleoperation-apex.github.io/Apex_doc_center/gento/skye-luna/getting-started/startup-debugging﻿
+5.3
+软件使用说明与二次开发接口
+详细操作链接：https://gento-teleoperation-apex.github.io/Apex_doc_center/software/apex-teleop﻿
+5.4
+头显操作说明
+详细操作链接：https://gento-teleoperation-apex.github.io/Apex_doc_center/xr-teleop﻿
+5.5
+进阶配置与排查
+详细操作链接：https://gento-teleoperation-apex.github.io/Apex_doc_center/advanced/configuration﻿
+5.6
+末端工具使用与二次开发
+详细操作链接：https://gento-teleoperation-apex.github.io/Apex_doc_center/end-effectors/apex-tool﻿
+5.7
+VLA数据采集
+详细操作链接：https://gento-teleoperation-apex.github.io/Apex_doc_center/vla﻿
+相关服务说明
+服务
+systemd 单元
+说明
+后端 API
+﻿apex-backend.service﻿
+统一 HTTP/WebSocket 入口
+摄像头
+﻿apex-camera.service﻿
+GMSL 四路摄像头
+机器人控制
+﻿apex-robot.service﻿
+ROS 控制与状态发布
+遥操作
+﻿apex-teleop.service﻿
+IK、规划、指令多路复用
+使用须知
+●
+不建议头显通过 WiFi 进行遥操，优先使用有线网络连接
+●
+若上位机无法连接机器人，请优先检查电源是否接通；网线、路由器 / 交换机是否接对；IP 网段是否一致
+●
+遥操前确认急停按钮、控制器供电、通信网线、U 盘、头显电量均正常
+●
+不遥操时切换待机模式，避免误触
+●
+修改 IP、负载、刚度、阻尼、Home 点、TCP 偏移前，应备份原始配置文件
+●
+头显没电、异常断电或关机后，应立即停止遥操操作
+﻿
+﻿
+
+
+LINKS
+https://gento-teleoperation-apex.github.io/Apex_doc_center/
+https://gento-teleoperation-apex.github.io/Apex_doc_center/pro/new-id/getting-started/startup-debugging
+https://gento-teleoperation-apex.github.io/Apex_doc_center/gento/skye-luna/getting-started/startup-debugging
+https://gento-teleoperation-apex.github.io/Apex_doc_center/software/apex-teleop
+https://gento-teleoperation-apex.github.io/Apex_doc_center/xr-teleop
+https://gento-teleoperation-apex.github.io/Apex_doc_center/advanced/configuration
+https://gento-teleoperation-apex.github.io/Apex_doc_center/end-effectors/apex-tool
+https://gento-teleoperation-apex.github.io/Apex_doc_center/vla

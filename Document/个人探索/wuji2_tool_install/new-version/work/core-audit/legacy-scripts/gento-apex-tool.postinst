@@ -1,0 +1,134 @@
+#!/bin/sh
+set -e
+
+ENV_FILE="${APEX_ENV_FILE:-/etc/apex/apex.env}"
+SERVICE_FILE="${APEX_SERVICE_FILE:-/etc/systemd/system/apex-tool.service}"
+
+existing_tool_type() {
+    if [ -r "${ENV_FILE}" ]; then
+        grep -E '^APEX_TOOL_TYPE=' "${ENV_FILE}" | tail -n 1 | cut -d= -f2- || true
+    fi
+}
+
+validate_tool_type() {
+    case "$1" in
+        dm|zy|none) return 0 ;;
+        *)
+            echo "Unsupported APEX_TOOL_TYPE: $1. Valid values: dm, zy, none." >&2
+            return 1
+            ;;
+    esac
+}
+
+select_tool_type() {
+    if [ -n "${APEX_TOOL_TYPE:-}" ]; then
+        current="$(printf '%s' "${APEX_TOOL_TYPE}" | tr '[:upper:]' '[:lower:]')"
+        validate_tool_type "${current}" || exit 2
+    else
+        current="$(existing_tool_type)"
+        current="${current:-dm}"
+        current="$(printf '%s' "${current}" | tr '[:upper:]' '[:lower:]')"
+        if ! validate_tool_type "${current}" >/dev/null 2>&1; then
+            current="dm"
+        fi
+    fi
+
+    if [ -z "${APEX_TOOL_TYPE:-}" ] && \
+       [ "${DEBIAN_FRONTEND:-}" != "noninteractive" ] && \
+       [ -r /dev/tty ] && [ -w /dev/tty ]; then
+        case "${current}" in
+            dm) default_choice=1 ;;
+            zy) default_choice=2 ;;
+            none) default_choice=3 ;;
+        esac
+        {
+            echo
+            echo "Select the end effector for Apex Tool:"
+            echo "  1) DM OmniGripper"
+            echo "  2) ZY gripper"
+            echo "  3) None (do not start an end-effector driver)"
+            printf "Enter choice [%s]: " "${default_choice}"
+        } > /dev/tty
+        read -r choice < /dev/tty || choice=""
+        choice="${choice:-${default_choice}}"
+        case "${choice}" in
+            1) current="dm" ;;
+            2) current="zy" ;;
+            3) current="none" ;;
+            *)
+                echo "Invalid end-effector selection: ${choice}" >&2
+                exit 2
+                ;;
+        esac
+    fi
+
+    validate_tool_type "${current}"
+    printf '%s\n' "${current}"
+}
+
+set_tool_type() {
+    value="$1"
+    env_dir="$(dirname "${ENV_FILE}")"
+    tmp_file="$(mktemp)"
+    mkdir -p "${env_dir}"
+    if [ -f "${ENV_FILE}" ]; then
+        awk -v value="${value}" '
+            BEGIN { updated = 0 }
+            /^APEX_TOOL_TYPE=/ {
+                if (updated == 0) {
+                    print "APEX_TOOL_TYPE=" value
+                    updated = 1
+                }
+                next
+            }
+            { print }
+            END {
+                if (updated == 0) print "APEX_TOOL_TYPE=" value
+            }
+        ' "${ENV_FILE}" > "${tmp_file}"
+    else
+        {
+            echo "# Apex runtime environment."
+            echo "APEX_TOOL_TYPE=${value}"
+        } > "${tmp_file}"
+    fi
+    install -m 0644 "${tmp_file}" "${ENV_FILE}"
+    rm -f "${tmp_file}"
+}
+
+if [ -n "${APEX_RUN_USER:-}" ]; then
+    RUN_USER="${APEX_RUN_USER}"
+elif [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != "root" ]; then
+    RUN_USER="${SUDO_USER}"
+elif [ -n "${USER:-}" ] && [ "${USER}" != "root" ]; then
+    RUN_USER="${USER}"
+else
+    RUN_USER="$(getent passwd 1000 | cut -d: -f1)"
+fi
+
+if [ -z "${RUN_USER:-}" ] || ! id "${RUN_USER}" >/dev/null 2>&1; then
+    echo "Cannot determine Apex run user; set APEX_RUN_USER and retry." >&2
+    exit 2
+fi
+
+RUN_GROUP="$(id -gn "${RUN_USER}")"
+
+if [ ! -f "${SERVICE_FILE}" ]; then
+    echo "Apex tool service file not found: ${SERVICE_FILE}" >&2
+    exit 2
+fi
+
+sed -i "s/^User=.*/User=${RUN_USER}/" "${SERVICE_FILE}"
+sed -i "s/^Group=.*/Group=${RUN_GROUP}/" "${SERVICE_FILE}"
+
+TOOL_TYPE="$(select_tool_type)"
+set_tool_type "${TOOL_TYPE}"
+
+if [ "${APEX_SKIP_SYSTEMD:-0}" != "1" ] && command -v systemctl >/dev/null 2>&1; then
+    systemctl daemon-reload || true
+fi
+
+echo "Gento Apex native tool package installed."
+echo "APEX_TOOL_TYPE=${TOOL_TYPE}"
+echo "The tool service was not started automatically."
+exit 0

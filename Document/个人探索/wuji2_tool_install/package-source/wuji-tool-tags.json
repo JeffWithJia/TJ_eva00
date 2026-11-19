@@ -1,0 +1,52 @@
+[
+  {
+    "name": "v2.0.1o",
+    "zipball_url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/zipball/refs/tags/v2.0.1o",
+    "tarball_url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/tarball/refs/tags/v2.0.1o",
+    "commit": {
+      "sha": "2b3fffd300d14944535439bd13825200d5449890",
+      "url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/commits/2b3fffd300d14944535439bd13825200d5449890"
+    },
+    "node_id": "REF_kwDOT0058rFyZWZzL3RhZ3MvdjIuMC4xbw"
+  },
+  {
+    "name": "v1.0.7.73t",
+    "zipball_url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/zipball/refs/tags/v1.0.7.73t",
+    "tarball_url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/tarball/refs/tags/v1.0.7.73t",
+    "commit": {
+      "sha": "8669c592e212ff7ee5fa77e319b9f2a9ab9d0854",
+      "url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/commits/8669c592e212ff7ee5fa77e319b9f2a9ab9d0854"
+    },
+    "node_id": "REF_kwDOT0058rRyZWZzL3RhZ3MvdjEuMC43LjczdA"
+  },
+  {
+    "name": "v1.0.7.71t",
+    "zipball_url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/zipball/refs/tags/v1.0.7.71t",
+    "tarball_url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/tarball/refs/tags/v1.0.7.71t",
+    "commit": {
+      "sha": "1ed0a9152fd49e98be9b5af39e55f1d733276c75",
+      "url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/commits/1ed0a9152fd49e98be9b5af39e55f1d733276c75"
+    },
+    "node_id": "REF_kwDOT0058rRyZWZzL3RhZ3MvdjEuMC43LjcxdA"
+  },
+  {
+    "name": "tool-v1.0.7.73o",
+    "zipball_url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/zipball/refs/tags/tool-v1.0.7.73o",
+    "tarball_url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/tarball/refs/tags/tool-v1.0.7.73o",
+    "commit": {
+      "sha": "8669c592e212ff7ee5fa77e319b9f2a9ab9d0854",
+      "url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/commits/8669c592e212ff7ee5fa77e319b9f2a9ab9d0854"
+    },
+    "node_id": "REF_kwDOT0058rlyZWZzL3RhZ3MvdG9vbC12MS4wLjcuNzNv"
+  },
+  {
+    "name": "81",
+    "zipball_url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/zipball/refs/tags/81",
+    "tarball_url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/tarball/refs/tags/81",
+    "commit": {
+      "sha": "2b3fffd300d14944535439bd13825200d5449890",
+      "url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex-tool-deb/commits/2b3fffd300d14944535439bd13825200d5449890"
+    },
+    "node_id": "REF_kwDOT0058qxyZWZzL3RhZ3MvODE"
+  }
+]

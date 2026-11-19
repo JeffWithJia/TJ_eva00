@@ -1,0 +1,134 @@
+
+VLA 概述 | Gento Teleoperation Apex 文档
+跳到主要内容
+Gento Teleoperation Apex文档
+中文
+中文
+EnglishGitHub
+Gento Teleoperation Apex 文档
+产品文档
+Marvin Pro
+Skye / Luna
+软件使用说明
+使用说明
+Marvin Pro 当前版
+Gento 当前版界面与操作
+经典版界面
+遥操模式与输入源
+Marvin Pro 接口
+Gento（Skye/Luna）ROS 2 接口
+Data-Processing-Tool
+Apex XR 头显客户端
+进阶配置及检测
+配置修改
+Topic 白名单配置与排查
+相机配置与 ROS 接口
+Marvin Pro ROS Topic 列表
+常见问题与速查
+Marvin Pro 模块化通讯排查
+Skye/Luna 模块化通讯排查
+末端夹爪
+ApexTool 使用与二次开发
+DM 夹爪 CAN 协议
+Wuji 二代灵巧手
+VLA 入门
+VLA 概述
+数据集转换
+数据集样例
+模型训练
+真机部署
+VLA Host 客户手册
+VLA 入门
+VLA 概述
+本页总览
+VLA 视觉-语言-动作模型
+VLA（Vision-Language-Action）是一类结合视觉感知、自然语言指令与机器人动作控制的端到端策略模型。给定相机画面、机器人本体状态和自然语言任务描述，模型直接输出末端执行器与夹爪的控制动作，适用于模仿学习与真机部署场景。
+本章节基于 OpenPI 框架，说明从数据采集、数据集转换、模型训练到真机推理的完整流程。
+适用场景​
+使用 LeRobot 格式数据集微调 PI0 / PI05 模型
+将 Data-Processing-Tool 导出的 LeRobot v3.0 数据集转换为 OpenPI 训练所需的 v2.1 格式
+在 Marvin Pro 等机型上部署训练好的 checkpoint，通过 WebSocket 策略服务执行语言指令任务
+端到端流程​
+原始采集数据（BAG / MCAP）
+  -> Data-Processing-Tool 导出 LeRobot v3.0 数据集
+  -> convert_v3_to_v2.py 转换为 v2.1 格式
+  -> train_pytorch.py 训练 PI0 / PI05 模型
+  -> serve_policy_kmd_joint.py 启动策略服务器
+  -> vlahost 采集机器人状态与相机画面
+  -> openpi_client_policy_http_kmd_joint.py 推理并下发动作
+观测与动作格式​
+当前 KMD 真机部署链路使用三路相机和 16 维关节空间状态：
+字段类型说明
+statefloat32 向量16 维状态：左臂 7 关节、左夹爪、右臂 7 关节、右夹爪
+cam_highHWC uint8主视角相机图像
+cam_left_wristHWC uint8左腕相机图像
+cam_right_wristHWC uint8右腕相机图像
+promptstring自然语言任务指令
+策略输出：
+字段类型说明
+actions[T, 16]关节动作 chunk，顺序与 16 维状态一致
+模型内部使用角度制；机器人侧 joint_states.positions 通常使用弧度制。OpenPI 客户端会在推理前执行 rad -> deg，并在下发动作前执行 deg -> rad。
+环境要求​
+Python 3.10+
+uv 包管理器
+OpenPI 项目根目录下执行所有命令
+训练推荐 NVIDIA GPU；推理可在独立 GPU 服务器上运行策略服务
+快速导航​
+文档内容
+数据集转换LeRobot v3.0 → v2.1 格式转换
+数据集样例四路相机视频与目录结构说明
+环境与项目准备OpenPI KMD、GPU、Docker 与机器人端 vlahost 环境
+模型训练PI0 / PI05 微调与 checkpoint 管理
+真机部署策略服务器与机器人客户端联调
+上一页
+Wuji 二代灵巧手
+下一页
+数据集转换
+适用场景
+端到端流程
+观测与动作格式
+环境要求
+快速导航
+Copyright © 2026 Gento Teleoperation Apex. Built with Docusaurus.
+
+LINKS
+#__docusaurus_skipToContent_fallback
+/Apex_doc_center/
+#
+/Apex_doc_center/vla
+/Apex_doc_center/en/vla
+https://github.com/Gento-Teleoperation-Apex/Apex_doc_center
+/Apex_doc_center/pro/new-id/product-introduction/overview
+/Apex_doc_center/gento/skye-luna/product-introduction/overview
+/Apex_doc_center/software/apex-teleop
+/Apex_doc_center/software/apex-teleop/pro-current
+/Apex_doc_center/software/apex-teleop/gento-current
+/Apex_doc_center/software/apex-teleop/classic
+/Apex_doc_center/software/apex-teleop/operation-modes
+/Apex_doc_center/software/apex-teleop/customer-interfaces
+/Apex_doc_center/software/apex-teleop/gento-interfaces
+/Apex_doc_center/data-converter/README.zh-CN
+/Apex_doc_center/xr-teleop
+/Apex_doc_center/advanced/configuration
+/Apex_doc_center/advanced/topic-whitelist
+/Apex_doc_center/advanced/camera-configuration-and-interfaces
+/Apex_doc_center/advanced/ros-topic-list
+/Apex_doc_center/advanced/troubleshooting
+/Apex_doc_center/advanced/pro-communication-diagnostics
+/Apex_doc_center/advanced/gento-communication-diagnostics
+/Apex_doc_center/end-effectors/apex-tool
+/Apex_doc_center/end-effectors/dm-can-protocol
+/Apex_doc_center/end-effectors/wuji2
+/Apex_doc_center/vla/dataset-conversion
+/Apex_doc_center/vla/dataset-sample
+/Apex_doc_center/vla/training
+/Apex_doc_center/vla/deployment
+/Apex_doc_center/vla/vla-host
+https://github.com/Physical-Intelligence/openpi
+#适用场景
+#端到端流程
+#观测与动作格式
+#环境要求
+https://github.com/astral-sh/uv
+#快速导航
+/Apex_doc_center/vla/environment

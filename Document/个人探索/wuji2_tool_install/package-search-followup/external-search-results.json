@@ -1,0 +1,53 @@
+[
+  {
+    "name": "github-issues-version",
+    "url": "https://api.github.com/search/issues?q=%221.0.7.86dex%22&per_page=100",
+    "status": 200,
+    "final_url": "https://api.github.com/search/issues?q=%221.0.7.86dex%22&per_page=100",
+    "result": {
+      "total_count": 0,
+      "items": []
+    }
+  },
+  {
+    "name": "github-commits-version",
+    "url": "https://api.github.com/search/commits?q=%221.0.7.86dex%22&per_page=100",
+    "status": 200,
+    "final_url": "https://api.github.com/search/commits?q=%221.0.7.86dex%22&per_page=100",
+    "result": {
+      "total_count": 0,
+      "items": []
+    }
+  },
+  {
+    "name": "github-issues-bundle",
+    "url": "https://api.github.com/search/issues?q=%22wuji_bundle%22&per_page=100",
+    "status": 200,
+    "final_url": "https://api.github.com/search/issues?q=%22wuji_bundle%22&per_page=100",
+    "result": {
+      "total_count": 0,
+      "items": []
+    }
+  },
+  {
+    "name": "bing-version",
+    "url": "https://www.bing.com/search?q=%22gento-apex-tool%22+%221.0.7.86dex%22",
+    "status": 200,
+    "final_url": "https://www.bing.com/search?q=%22gento-apex-tool%22+%221.0.7.86dex%22",
+    "result": "\"gento-apex-tool\" \"1.0.7.86dex\" - Search Skip to content Accessibility Feedback All AI Mode Images Videos Maps News More Shopping Flights Tools 54,500 results Open links in new tab Any time gento.io https://www. gento .io Healthcare Staffing | In-Home Health Care | Nurses and Therapists Gento is an online healthcare staffing marketplace for nurses and therapists looking to work Per diem in the in-home health care … gento.io https://g8a. gento .io Gento Don't have an account? Register. gento.io https://www. gento .io › agency.html Welcome to Gento - Agency - Care Delivery Reimagined How will your app work with our EMR? We do not offer EMR integration at this time, but it is a simple process to download clinician … linkedin.com https://www.linkedin.com › company › join gento Gento - LinkedIn Named one of the Top 10 Startups by Healthcare Tech Outlook. Los Angeles- based Gento is transforming the way in-home and … youtube.com https:// www.youtube.com › watch SB19 ' GENTO ' Music Video - YouTube Artist: SB19 PABLO · JOSH · STELL · KEN · JUSTINMusic: Written by: RadKidz (PABLO)Produced by: RadKidz (PABLO and josue) … wikipedia.org https:// en.wikipedia.org › wiki › Gento _(song) Gento (song) - Wikipedia \" Gento \" (stylized in all uppercase) is a song recorded by the Filipino boy band SB19 for their second extended play (EP), Pagtatag! … wikipedia.org https:// en.wikipedia.org › wiki › Paco_Gento Paco Gento - Wikipedia Gento played for the Spain national team from 1955 to 1969, winning 43 caps and scoring five times. His debut came on 18 May … Pagination 1 2 3 Next Privacy Terms All Past 24 hours Past week Past month Past year --> --> --> --> --> --> --> --> --> --> --> --> --> --> --> --> --> --> -->"
+  },
+  {
+    "name": "google-bundle",
+    "url": "https://www.google.com/search?q=%22wuji_bundle%22",
+    "status": 200,
+    "final_url": "https://www.google.com/search?q=%22wuji_bundle%22",
+    "result": "Google Search Please click here if you are not redirected within a few seconds. If you're having trouble accessing Google Search, please click here , or send feedback ."
+  },
+  {
+    "name": "duckduckgo-version",
+    "url": "https://html.duckduckgo.com/html/?q=%221.0.7.86dex%22",
+    "status": 202,
+    "final_url": "https://html.duckduckgo.com/html/?q=%221.0.7.86dex%22",
+    "result": "--> DuckDuckGo DuckDuckGo Unfortunately, bots use DuckDuckGo too. Please complete the following challenge to confirm this search was made by a human. Select all squares containing a duck: Submit Images not loading? Please email the following code to: error-lite+2a60@duckduckgo.com Code: 2a60 here . //-->"
+  }
+]

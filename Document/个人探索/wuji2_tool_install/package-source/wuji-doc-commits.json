@@ -1,0 +1,84 @@
+[
+  {
+    "sha": "1221776e41fb887b531d1b19bf6a76e2911b5420",
+    "node_id": "C_kwDOTvm70toAKDEyMjE3NzZlNDFmYjg4N2I1MzFkMWIxOWJmNmE3NmUyOTExYjU0MjA",
+    "commit": {
+      "author": {
+        "name": "Li Haoran",
+        "email": "18813091982@163.com",
+        "date": "2026-09-16T07:39:57Z"
+      },
+      "committer": {
+        "name": "Li Haoran",
+        "email": "18813091982@163.com",
+        "date": "2026-09-16T09:21:37Z"
+      },
+      "message": "docs: add Wuji second-generation hand guide",
+      "tree": {
+        "sha": "e0854e9a4341fd071c64f0aacb9e1ec664acbc1a",
+        "url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex_doc_center/git/trees/e0854e9a4341fd071c64f0aacb9e1ec664acbc1a"
+      },
+      "url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex_doc_center/git/commits/1221776e41fb887b531d1b19bf6a76e2911b5420",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex_doc_center/commits/1221776e41fb887b531d1b19bf6a76e2911b5420",
+    "html_url": "https://github.com/Gento-Teleoperation-Apex/Apex_doc_center/commit/1221776e41fb887b531d1b19bf6a76e2911b5420",
+    "comments_url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex_doc_center/commits/1221776e41fb887b531d1b19bf6a76e2911b5420/comments",
+    "author": {
+      "login": "LiHaoran230",
+      "id": 266652526,
+      "node_id": "U_kgDOD-TLbg",
+      "avatar_url": "https://avatars.githubusercontent.com/u/266652526?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/LiHaoran230",
+      "html_url": "https://github.com/LiHaoran230",
+      "followers_url": "https://api.github.com/users/LiHaoran230/followers",
+      "following_url": "https://api.github.com/users/LiHaoran230/following{/other_user}",
+      "gists_url": "https://api.github.com/users/LiHaoran230/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/LiHaoran230/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/LiHaoran230/subscriptions",
+      "organizations_url": "https://api.github.com/users/LiHaoran230/orgs",
+      "repos_url": "https://api.github.com/users/LiHaoran230/repos",
+      "events_url": "https://api.github.com/users/LiHaoran230/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/LiHaoran230/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "LiHaoran230",
+      "id": 266652526,
+      "node_id": "U_kgDOD-TLbg",
+      "avatar_url": "https://avatars.githubusercontent.com/u/266652526?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/LiHaoran230",
+      "html_url": "https://github.com/LiHaoran230",
+      "followers_url": "https://api.github.com/users/LiHaoran230/followers",
+      "following_url": "https://api.github.com/users/LiHaoran230/following{/other_user}",
+      "gists_url": "https://api.github.com/users/LiHaoran230/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/LiHaoran230/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/LiHaoran230/subscriptions",
+      "organizations_url": "https://api.github.com/users/LiHaoran230/orgs",
+      "repos_url": "https://api.github.com/users/LiHaoran230/repos",
+      "events_url": "https://api.github.com/users/LiHaoran230/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/LiHaoran230/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "55ee6df620e4e951d95c23452d5efa7928955a20",
+        "url": "https://api.github.com/repos/Gento-Teleoperation-Apex/Apex_doc_center/commits/55ee6df620e4e951d95c23452d5efa7928955a20",
+        "html_url": "https://github.com/Gento-Teleoperation-Apex/Apex_doc_center/commit/55ee6df620e4e951d95c23452d5efa7928955a20"
+      }
+    ]
+  }
+]

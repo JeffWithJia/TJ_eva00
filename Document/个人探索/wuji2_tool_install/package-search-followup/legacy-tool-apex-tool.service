@@ -1,0 +1,18 @@
+[Unit]
+Description=Apex Tool module
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nvidia
+Group=nvidia
+EnvironmentFile=-/etc/apex/apex.env
+WorkingDirectory=/opt/kernelmind/apex_tool
+ExecStart=/bin/bash /etc/apex/apex-launch-tool.sh
+Restart=no
+KillSignal=SIGINT
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,119 @@
+#!/bin/bash
+set -e
+
+PROFILE_SCRIPT="/etc/profile.d/kernelmind_apex.sh"
+INSTALL_PREFIX="/opt/kernelmind/apex/install"
+SYSTEMD_INSTALLER="${INSTALL_PREFIX}/apex_backend/share/apex_backend/scripts/install_systemd_services.sh"
+BACKEND_CONTAINER_INSTALLER="${INSTALL_PREFIX}/apex_backend/share/apex_backend/docker/install_backend_container.sh"
+BACKEND_CONTAINER_PAYLOAD="/opt/kernelmind/apex/backend-container"
+CAMERA_PYTHON_DIR="/opt/kernelmind/apex/camera-python"
+PINOCCHIO_POLICY="/opt/kernelmind/apex/pinocchio_runtime.env"
+PINOCCHIO_VERIFIER="/opt/kernelmind/apex/verify_pinocchio_runtime.py"
+
+if [ ! -r "${PINOCCHIO_POLICY}" ]; then
+    echo "ERROR: Pinocchio runtime policy is missing: ${PINOCCHIO_POLICY}" >&2
+    exit 2
+fi
+# shellcheck source=pinocchio_runtime.env
+source "${PINOCCHIO_POLICY}"
+
+cat > "${PROFILE_SCRIPT}" <<'EOF'
+# KernelMind Apex - ROS 2 environment
+source /etc/apex/apex_ros_env.sh
+EOF
+chmod 644 "${PROFILE_SCRIPT}"
+
+# Check this before changing the active service mode. An incomplete .deb must
+# not leave the host without a Backend.
+if [ ! -r "${BACKEND_CONTAINER_PAYLOAD}/image.env" ] || \
+   [ ! -r "${BACKEND_CONTAINER_PAYLOAD}/backend-image.tar" ]; then
+    echo "ERROR: bundled Backend image payload is incomplete." >&2
+    exit 2
+fi
+if [ ! -x "${BACKEND_CONTAINER_INSTALLER}" ]; then
+    echo "ERROR: Backend container installer is missing: ${BACKEND_CONTAINER_INSTALLER}" >&2
+    exit 2
+fi
+
+# shellcheck disable=SC1090
+source "${BACKEND_CONTAINER_PAYLOAD}/image.env"
+: "${APEX_BACKEND_IMAGE:?image.env did not define APEX_BACKEND_IMAGE}"
+: "${APEX_ROS_DISTRO:?image.env did not define APEX_ROS_DISTRO}"
+
+# Camera runs on the host and starts a Python WebRTC signaling server.  Keep
+# its modern websockets runtime isolated from Ubuntu's older apt package.
+if [ ! -r "${CAMERA_PYTHON_DIR}/websockets/__init__.py" ]; then
+    echo "ERROR: bundled Camera Python runtime is missing." >&2
+    exit 2
+fi
+CAMERA_WEBSOCKETS_VERSION="$(
+    env PYTHONPATH="${CAMERA_PYTHON_DIR}" PYTHONNOUSERSITE=1 \
+        /usr/bin/python3 -c 'import websockets; print(websockets.__version__)'
+)"
+if [ "${CAMERA_WEBSOCKETS_VERSION}" != "16.0" ]; then
+    echo "ERROR: bundled Camera websockets is ${CAMERA_WEBSOCKETS_VERSION:-unknown}, expected 16.0." >&2
+    exit 2
+fi
+
+# Backend-only Python dependencies live in the image. The host still verifies
+# its ROS Pinocchio runtime, but no network access or host virtualenv is needed.
+if [ ! -r "${PINOCCHIO_VERIFIER}" ]; then
+    echo "ERROR: Pinocchio runtime verifier is missing: ${PINOCCHIO_VERIFIER}" >&2
+    exit 2
+fi
+PINOCCHIO_ROS_SETUP="/opt/ros/${APEX_PINOCCHIO_ROS_DISTRO}/setup.bash"
+if [ ! -r "${PINOCCHIO_ROS_SETUP}" ]; then
+    echo "ERROR: ROS setup for Pinocchio verification not found: ${PINOCCHIO_ROS_SETUP}" >&2
+    exit 2
+fi
+(
+    unset PYTHONPATH
+    # shellcheck disable=SC1090
+    source "${PINOCCHIO_ROS_SETUP}"
+    export PYTHONNOUSERSITE=1
+    /usr/bin/python3 "${PINOCCHIO_VERIFIER}" \
+        --min-version "${APEX_PINOCCHIO_MIN_VERSION}" \
+        --max-version "${APEX_PINOCCHIO_MAX_VERSION}"
+)
+
+mkdir -p /etc/kernelmind/marvin_ros_control
+ln -sfn "${INSTALL_PREFIX}/marvin_ros_control/share/marvin_ros_control/config" \
+    /etc/kernelmind/marvin_ros_control/config
+
+mkdir -p /etc/kernelmind/marvin_teleop
+ln -sfn "${INSTALL_PREFIX}/marvin_teleop/share/marvin_teleop/config" \
+    /etc/kernelmind/marvin_teleop/config
+
+if [ ! -f "${SYSTEMD_INSTALLER}" ]; then
+    echo "ERROR: Apex systemd installer not found: ${SYSTEMD_INSTALLER}" >&2
+    exit 2
+fi
+
+# Install host modules and /etc/apex, while leaving the Backend unit to the
+# container installer below. This is the native -> Docker switch made by the
+# single .deb.
+APEX_BACKEND_SERVICE_MODE=container \
+APEX_PRESERVE_ROS_ENV=1 \
+APEX_WS_SETUP="${INSTALL_PREFIX}/setup.bash" \
+    bash "${SYSTEMD_INSTALLER}"
+
+systemctl enable --now docker.service
+APEX_BACKEND_IMAGE_TAR="${BACKEND_CONTAINER_PAYLOAD}/backend-image.tar" \
+APEX_BACKEND_IMAGE="${APEX_BACKEND_IMAGE}" \
+APEX_ROS_DISTRO="${APEX_ROS_DISTRO}" \
+    "${BACKEND_CONTAINER_INSTALLER}" install
+
+# Switch the shared host environment only after the Docker Backend has passed
+# both smoke and production health checks. If installation fails before here,
+# install_backend_container.sh restores the previous Backend unit and the old
+# host environment remains usable.
+install -m 0644 \
+    "${INSTALL_PREFIX}/apex_backend/share/apex_backend/scripts/apex_ros_env.sh" \
+    /etc/apex/apex_ros_env.sh
+
+# Remove a generated virtualenv from a pre-container release after the switch.
+rm -rf /opt/kernelmind/venv
+
+echo "KernelMind Apex installed. Re-login or run:"
+echo "  source /etc/profile.d/kernelmind_apex.sh"
+echo "Apex systemd services are installed. Docker Backend is enabled and running."

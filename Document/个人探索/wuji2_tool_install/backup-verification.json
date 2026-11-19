@@ -1,0 +1,7 @@
+{
+  "outer_archive_sha256": "782d334c8b43555396c7034ba5ab3e40b719cb63790552a36f3c8703cfd09ed5",
+  "verified_backup_files": 14,
+  "verified_live_file_contents_and_metadata": 146,
+  "rollback_deb_matches_official_download": true,
+  "actual_install_or_rollback_performed": false
+}

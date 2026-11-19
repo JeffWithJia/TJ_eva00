@@ -1,0 +1,20 @@
+{
+  "date": "2026-11-18",
+  "host": "vision",
+  "tag": "teleoperation-apex-runtime:1.0.4",
+  "image_id": "sha256:85624684bf261053ee7327d2c05f2dfe530cdef0ca2679698cac0dd93fe4e966",
+  "architecture": "arm64",
+  "os": "linux",
+  "image_imported": true,
+  "new_core_installed": false,
+  "new_tool_installed": false,
+  "new_camera_installed": false,
+  "baseline_states_rechecked": {
+    "apex-backend": "active",
+    "apex-backend-host-control": "active",
+    "apex-robot": "inactive",
+    "apex-teleop": "inactive",
+    "apex-tool": "inactive",
+    "apex-camera": "inactive"
+  }
+}

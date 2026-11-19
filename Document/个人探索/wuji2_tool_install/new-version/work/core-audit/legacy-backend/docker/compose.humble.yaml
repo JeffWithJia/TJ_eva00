@@ -1,0 +1,33 @@
+services:
+  backend:
+    image: ${APEX_BACKEND_IMAGE:-kernelmind/apex-backend:humble-arm64}
+    container_name: apex-backend
+    network_mode: host
+    ipc: host
+    restart: unless-stopped
+    read_only: true
+    user: "1000:1000"
+    env_file:
+      - /etc/apex/apex.env
+    environment:
+      HOME: /home/apex
+      APEX_CONTAINER_ENV_LOADED: "1"
+      APEX_HOST_CONTROL_SOCKET: /run/apex-host-control/backend.sock
+    volumes:
+      - /etc/apex:/etc/apex:ro
+      - /run/apex-host-control/backend.sock:/run/apex-host-control/backend.sock
+      - ${BAG_STORAGE_ROOT:-/media/nvidia/BAG_STORAGE}:${BAG_STORAGE_ROOT:-/media/nvidia/BAG_STORAGE}
+      - /var/log/apex:/var/log/apex
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /home/apex/.ros:size=16m,uid=1000,gid=1000
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import os,urllib.request; port=os.environ.get('APEX_BACKEND_PORT','8080'); urllib.request.urlopen(f'http://127.0.0.1:{port}/api/v1/system/health', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s

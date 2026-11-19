@@ -1,0 +1,134 @@
+quad_csi_quickview:
+  ros__parameters:
+    # Camera model defaults live in camera_profiles/*.yaml. Paths are relative
+    # to this file, so the same configuration works from source and install.
+    camera_profiles:
+      s56: "camera_profiles/s56.yaml"
+      sh5: "camera_profiles/sh5.yaml"
+      sh3: "camera_profiles/sh3.yaml"
+      d405: "camera_profiles/d405.yaml"
+
+    # Keep only deployment-specific wiring and mounting overrides here.
+    camera:
+      # Start the auxiliary USB RealSense D435 through rgbd_cameras.launch.py.
+      head_depth: false
+
+      head_left:
+        profile: "sh5"
+        source: "csi://0"
+        flip_method: false
+        h264_output_width: 1280
+        h264_output_height: 720
+
+      head_right:
+        profile: "sh5"
+        source: "csi://1"
+        flip_method: false
+        h264_output_width: 1280
+        h264_output_height: 720
+
+      wrist_left:
+        profile: "sh5"
+        source: "csi://4"
+        flip_method: true
+        h264_output_width: 1280
+        h264_output_height: 720
+
+      wrist_right:
+        profile: "sh5"
+        source: "csi://5"
+        flip_method: true
+        h264_output_width: 1280
+        h264_output_height: 720
+
+    # Output cadence only. Capture FPS comes from each camera profile and can
+    # be overridden in an individual slot.
+    mosaic:
+      fps: 30
+      output_width: 3840
+      output_height: 2160
+      # true: reserve a 70 px black band and draw time information;
+      # false: remove the band and let the lower camera cells use the space.
+      show_timestamp: false
+
+    # First rebuild only the failed camera. If rebuilding blocks for too long
+    # or fails twice, exit and recreate the complete component container so
+    # Argus, V4L2, NVMM and GStreamer resources are released by the OS.
+    recovery:
+      max_attempts: 2
+      operation_timeout_s: 30.0
+      low_fps_ratio: 0.5
+      low_fps_window_s: 10.0
+      exit_container_on_failure: true
+      container_restart_delay_s: 5.0
+      # At most recovery_1..recovery_3 within five minutes. A fourth failure
+      # opens the circuit breaker and shuts down the complete Launch.
+      container_max_restarts: 3
+      container_restart_window_s: 300.0
+      container_backoff_multiplier: 2.0
+      container_max_restart_delay_s: 30.0
+      # A fatal container exit in a deployment containing CSI cameras first
+      # resets the system Argus service, then reconstructs the container.
+      # This command is non-interactive and requires the README sudoers rule.
+      argus_restart_enabled: true
+      argus_restart_after_container_failures: 1
+      argus_restart_max_attempts: 1
+      argus_restart_timeout_s: 20.0
+      argus_restart_settle_s: 3.0
+      argus_restart_command:
+        - "/usr/bin/sudo"
+        - "-n"
+        - "/usr/bin/systemctl"
+        - "restart"
+        - "nvargus-daemon.service"
+
+    # Measures frames as they arrive from the GStreamer appsink, before any
+    # ROS Image export. Set to 0 to disable periodic capture FPS logs.
+    diagnostics:
+      capture_fps_log_interval_s: 0.0
+
+    # Per-camera compressed ROS output. MJPEG is the default; legacy H.264 and
+    # a fully disabled mode remain selectable. Large raw topics stay hidden.
+    outputs:
+      # disabled | h264 | mjpeg. MJPEG uses NVIDIA nvjpegenc and publishes
+      # sensor_msgs/msg/CompressedImage at 1280x720 for the default profiles.
+      camera_stream_codec: "h264"
+      publish_only_with_subscribers: true
+      mjpeg_quality: 55
+      # Temporarily disable the two calibrated SH5 H.264 outputs:
+      # /camera/left_eye/image_h264_undistorted
+      # /camera/right_eye/image_h264_undistorted
+      publish_h264_undistorted: false
+      h264_bitrate: 8000000
+      h264_gop: 30
+      publish_raw_nv12: false
+      publish_undistorted_nv12: false
+      publish_depth_raw: false
+
+    webrtc:
+      gop: 60
+      output_width: 1920
+      output_height: 1488
+      bitrate: 8242880
+      min_bitrate: 2000000
+      max_bitrate: 12000000
+      publish_h264: true
+      signal_url: "ws://127.0.0.1:8554"
+      room_ids: ["10", "11", "12"]
+
+    # JPEG Mosaic for VLA Host. Encoding is gated by ROS subscriptions, so
+    # nvjpegenc remains idle while nobody consumes /quad_tile/jpeg/compressed.
+    mjpeg:
+      publish: true
+      output_width: 640
+      output_height: 360
+      quality: 55
+
+    recorder:
+      directory: "/media/marvin/BAG_STORAGE/recorded_bags"
+      output_width: 1920
+      output_height: 1080
+      bitrate: 20000000
+      gop: 60
+      max_bagfile_size: 2147483648
+      max_bagfile_duration: 600

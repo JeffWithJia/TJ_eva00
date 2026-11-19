@@ -1,0 +1,102 @@
+
+使用说明 | Gento Teleoperation Apex 文档
+跳到主要内容
+Gento Teleoperation Apex文档
+中文
+中文
+EnglishGitHub
+Gento Teleoperation Apex 文档
+产品文档
+Marvin Pro
+Skye / Luna
+软件使用说明
+使用说明
+Marvin Pro 当前版
+Gento 当前版界面与操作
+经典版界面
+遥操模式与输入源
+Marvin Pro 接口
+Gento（Skye/Luna）ROS 2 接口
+Data-Processing-Tool
+Apex XR 头显客户端
+进阶配置及检测
+配置修改
+Topic 白名单配置与排查
+相机配置与 ROS 接口
+Marvin Pro ROS Topic 列表
+常见问题与速查
+Marvin Pro 模块化通讯排查
+Skye/Luna 模块化通讯排查
+末端夹爪
+ApexTool 使用与二次开发
+DM 夹爪 CAN 协议
+Wuji 二代灵巧手
+VLA 入门
+软件使用说明
+使用说明
+本页总览
+Apex Teleop 使用说明
+Apex 上位机软件用于连接机器人控制器、管理遥操模块、切换控制模式、查看相机画面，以及录制、回放和排查运行日志。交付软件由机器人控制端、Teleop 遥操服务和前端界面组成，三者版本号含义不同。
+软件层当前文档基线作用
+Marvin Pro 控制端gento-apex 1.1.7.1当前 Pro 源码核对目标，使用 Gento SDK 4.7.1；源码中仍标记为未正式发布
+Skye/Luna 控制端v1.1.7.1g当前 Gento 正式文档基线，使用 Gento SDK 4.7.1；客户安装包以交付清单为准
+Teleop 遥操服务与前端随交付批次配套处理遥操数据并提供上位机界面，不与控制端包版本混用
+头显客户端随交付批次配套提供视频显示和遥操输入
+版本会持续更新，以上编号用于说明当前文档基线，现场应使用同一交付批次的配套软件。
+版本适用范围​
+产品使用界面说明
+Marvin Pro（当前天准版本）当前版界面当前控制端源码核对目标为 gento-apex 1.1.7.1，尚未标记为正式发布
+Marvin Pro（历史 Orin 版本）经典版界面面向已出货历史设备
+Skye / Luna（新版配套界面）Gento 当前版界面与操作含配置保存/应用、录制与回放；按实际交付版本确认能力
+Skye / Luna（历史界面）经典版界面保留已出货版本说明
+文档导航​
+Gento 当前版界面、配置、录制与安全回放
+遥操模式、IK 输入源与全身/双臂/底盘操作
+Marvin Pro 当前版界面与操作
+Marvin Pro 历史版与 Skye/Luna 经典界面
+Marvin Pro 客户二次开发接口
+Gento（Skye/Luna）ROS 2 接口
+Pico 头显操作说明
+Meta Quest 头显操作说明
+Marvin Pro 支持 Pico 和 Meta Quest；Skye/Luna 的全身遥操使用 Pico 头显及腰部、腿部追踪组件。
+上一页
+软件与固件升级
+下一页
+Marvin Pro 当前版
+版本适用范围
+文档导航
+Copyright © 2026 Gento Teleoperation Apex. Built with Docusaurus.
+
+LINKS
+#__docusaurus_skipToContent_fallback
+/Apex_doc_center/
+#
+/Apex_doc_center/software/apex-teleop
+/Apex_doc_center/en/software/apex-teleop
+https://github.com/Gento-Teleoperation-Apex/Apex_doc_center
+/Apex_doc_center/pro/new-id/product-introduction/overview
+/Apex_doc_center/gento/skye-luna/product-introduction/overview
+/Apex_doc_center/software/apex-teleop/pro-current
+/Apex_doc_center/software/apex-teleop/gento-current
+/Apex_doc_center/software/apex-teleop/classic
+/Apex_doc_center/software/apex-teleop/operation-modes
+/Apex_doc_center/software/apex-teleop/customer-interfaces
+/Apex_doc_center/software/apex-teleop/gento-interfaces
+/Apex_doc_center/data-converter/README.zh-CN
+/Apex_doc_center/xr-teleop
+/Apex_doc_center/advanced/configuration
+/Apex_doc_center/advanced/topic-whitelist
+/Apex_doc_center/advanced/camera-configuration-and-interfaces
+/Apex_doc_center/advanced/ros-topic-list
+/Apex_doc_center/advanced/troubleshooting
+/Apex_doc_center/advanced/pro-communication-diagnostics
+/Apex_doc_center/advanced/gento-communication-diagnostics
+/Apex_doc_center/end-effectors/apex-tool
+/Apex_doc_center/end-effectors/dm-can-protocol
+/Apex_doc_center/end-effectors/wuji2
+/Apex_doc_center/vla
+#版本适用范围
+#文档导航
+/Apex_doc_center/xr-teleop/pico
+/Apex_doc_center/xr-teleop/meta
+/Apex_doc_center/gento/skye-luna/getting-started/software-update

@@ -1,0 +1,37 @@
+#!/bin/bash
+set -e
+
+# Keep the current services during upgrades. The new postinst loads the
+# packaged image and performs the transactional unit switch.
+case "${1:-}" in
+    upgrade|failed-upgrade)
+        exit 0
+        ;;
+esac
+
+PROFILE_SCRIPT="/etc/profile.d/kernelmind_apex.sh"
+CONTAINER_MANAGER="/usr/local/share/apex/backend-docker/docker/install_backend_container.sh"
+
+rm -f "${PROFILE_SCRIPT}"
+rm -f /etc/kernelmind/marvin_ros_control/config
+rm -f /etc/kernelmind/marvin_teleop/config
+
+if [ -x "${CONTAINER_MANAGER}" ]; then
+    "${CONTAINER_MANAGER}" uninstall || true
+else
+    systemctl disable --now apex-backend.service apex-backend-host-control.service \
+        2>/dev/null || true
+    docker rm --force apex-backend apex-backend-smoke 2>/dev/null || true
+    rm -f /etc/systemd/system/apex-backend.service \
+        /etc/systemd/system/apex-backend-host-control.service \
+        /usr/local/libexec/apex/apex_backend_host_control.py \
+        /etc/apex/backend-container.env
+    rm -rf /usr/local/share/apex/backend-docker
+fi
+
+for svc in apex-camera apex-dnsmasq apex-robot apex-teleop apex-tool; do
+    systemctl stop "${svc}.service" 2>/dev/null || true
+    systemctl disable "${svc}.service" 2>/dev/null || true
+done
+
+systemctl daemon-reload

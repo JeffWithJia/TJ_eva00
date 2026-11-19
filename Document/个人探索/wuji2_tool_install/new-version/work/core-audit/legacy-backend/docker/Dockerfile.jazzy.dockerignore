@@ -1,0 +1,14 @@
+**
+!UI_node/
+!UI_node/apex_backend/
+!UI_node/apex_backend/**
+!mobile_base/
+!mobile_base/interface/
+!mobile_base/interface/move/
+!mobile_base/interface/move/**
+!robot_node/
+!robot_node/marvin_msgs/
+!robot_node/marvin_msgs/**
+UI_node/apex_backend/.git
+**/__pycache__
+**/*.pyc

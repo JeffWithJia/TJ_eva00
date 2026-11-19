@@ -1,0 +1,203 @@
+{
+  "archive": "/tmp/tianji-tool2-upgrade/runtime-audit/teleoperation-apex-runtime_1.0.4_humble_base_arm64.tar",
+  "archive_format": "docker-save (manifest.json, unchanged config, uncompressed verified layer.tar entries)",
+  "archive_sha256": "sha256:b9717d4c3601d096f247eda47fbc45295f47599b557fe55a4db79c7eb8099c5b",
+  "archive_bytes": 2618705920,
+  "repo_tags": [
+    "teleoperation-apex-runtime:1.0.4"
+  ],
+  "image_id": "sha256:85624684bf261053ee7327d2c05f2dfe530cdef0ca2679698cac0dd93fe4e966",
+  "source_image": "ghcr.io/gento-teleoperation-apex/teleoperation-apex-runtime:1.0.4",
+  "source_manifest_digest": "sha256:3436b133262cf974262747acfbd0b4bcd680fed50d9f9ee6d377421d6afe5af2",
+  "source_index_digest": "sha256:afceca35da7ce88bc5a86d77dfc7c7c3999de349ae78920ba0aa358322305a2e",
+  "all_compressed_and_uncompressed_layer_digests_verified": true,
+  "finished_archive_config_and_layer_digests_verified": true,
+  "docker_daemon_used": false,
+  "containers_run": false,
+  "layers": [
+    {
+      "index": 0,
+      "compressed_digest": "sha256:231032373bb3b10375f5940876c5c9a4a630f4e007e3aee895f8e1687b00295e",
+      "compressed_bytes": 27620453,
+      "diff_id": "sha256:bf05b9274099653dfa3f182aeace25591e8de4215f625d8f58da1fba0e34036a",
+      "uncompressed_bytes": 72233984,
+      "verified": true
+    },
+    {
+      "index": 1,
+      "compressed_digest": "sha256:9ea2b692952962172cece539476cb4c365d0eb0f1ed109e85b640d4a64a12d1a",
+      "compressed_bytes": 1212561,
+      "diff_id": "sha256:d7c5440016d42218f1d49001229a6deb406dd503be6686ecd5350a928a692dca",
+      "uncompressed_bytes": 5794304,
+      "verified": true
+    },
+    {
+      "index": 2,
+      "compressed_digest": "sha256:fd42bf15dc504c756132eb8cd4a60331d411b1db834dd84d31c69627ea28b93f",
+      "compressed_bytes": 5909620,
+      "diff_id": "sha256:b8a476f9756c5b9c6fa162cdd6ff344b51e4949e5ec2426523e08e9e5281ebc9",
+      "uncompressed_bytes": 13736448,
+      "verified": true
+    },
+    {
+      "index": 3,
+      "compressed_digest": "sha256:857bf398572a9e5a03b7477604aaa8c6049386bc1c0a5128d8ff3bbe0b8c69fb",
+      "compressed_bytes": 97602,
+      "diff_id": "sha256:d28be2136d2a6cf0292b197f4d5b1a6a1286ef2d54750fecde19b7d4f2fa3a17",
+      "uncompressed_bytes": 530432,
+      "verified": true
+    },
+    {
+      "index": 4,
+      "compressed_digest": "sha256:62adfc7206d98c082f24577ae9b227079048a8be5870905b7045a9524ffbf2fa",
+      "compressed_bytes": 102913623,
+      "diff_id": "sha256:d6584659a5b917711ccfeddce81dc848e12fa77602d73bdadee95c61a17135cb",
+      "uncompressed_bytes": 333399552,
+      "verified": true
+    },
+    {
+      "index": 5,
+      "compressed_digest": "sha256:a6731f78a3a4be8c02e84d1c2fc9e0c44a409a60d035fda492c66885ce001f9a",
+      "compressed_bytes": 195,
+      "diff_id": "sha256:00981682226fd718bccf249f4d0bfc2cc8840378848a5905ea789f315557216b",
+      "uncompressed_bytes": 2048,
+      "verified": true
+    },
+    {
+      "index": 6,
+      "compressed_digest": "sha256:631e2cb5f792be57c74ebb5d05e2c5a65dd1ebf7716f29534440f8d96f76bb49",
+      "compressed_bytes": 95798064,
+      "diff_id": "sha256:7204093eda561372b083ef36aa3b3105b11a0daca32dce8aff3b0b6dfd23a46c",
+      "uncompressed_bytes": 255131648,
+      "verified": true
+    },
+    {
+      "index": 7,
+      "compressed_digest": "sha256:5a3acdfd7b48cd2f5c4917376714c0dfee347d182acdeb162e96f01484d7cece",
+      "compressed_bytes": 385496,
+      "diff_id": "sha256:d7686c476efef7efed63403767884a8f3b77b2baa7656507fa90289a3346e8e4",
+      "uncompressed_bytes": 1402880,
+      "verified": true
+    },
+    {
+      "index": 8,
+      "compressed_digest": "sha256:a85261beffdc45189366207cf799aa19cd7f7149d2a580ddda85949b33966497",
+      "compressed_bytes": 2512,
+      "diff_id": "sha256:f07f1db122718a02ec9b99d710c805afce94189881d7c1c65fb1f4f1e485abd2",
+      "uncompressed_bytes": 37376,
+      "verified": true
+    },
+    {
+      "index": 9,
+      "compressed_digest": "sha256:d9f0891823154b21cd3f552a9425761fb4be0bdc04e592f40a8500eba3d25727",
+      "compressed_bytes": 22743920,
+      "diff_id": "sha256:ab079a15485586f5a5f248dcd23076f6cf3764b6b2ee2498cc94e919bd8719f2",
+      "uncompressed_bytes": 69387776,
+      "verified": true
+    },
+    {
+      "index": 10,
+      "compressed_digest": "sha256:0dfd5c5432d318b67bbfe4883f31b5d51b3740fb2658a1a20141c614a0db541c",
+      "compressed_bytes": 548155930,
+      "diff_id": "sha256:7da5bb8a12e2334d03a29e1d9ac4399489f89361e79919666e1d4e7fb4872915",
+      "uncompressed_bytes": 1851317248,
+      "verified": true
+    },
+    {
+      "index": 11,
+      "compressed_digest": "sha256:ef383a87e716373f79f3235d842b31e457c0b6ffd64c569f464456d11fbd2bdd",
+      "compressed_bytes": 314,
+      "diff_id": "sha256:ab7a45e6b4eedcec28a2978ad8e8bf280583283cd7845fce19927703720e5c71",
+      "uncompressed_bytes": 2560,
+      "verified": true
+    },
+    {
+      "index": 12,
+      "compressed_digest": "sha256:3934e5471a69c7000edbff3d33fca39a1c179adb2883f800887560ffdd8d0f07",
+      "compressed_bytes": 4716116,
+      "diff_id": "sha256:a23798c5ff4dcd01dcf3bbfe5e8d8a9534206f47ed44308aa9b9c9091a7f1a8e",
+      "uncompressed_bytes": 14982144,
+      "verified": true
+    },
+    {
+      "index": 13,
+      "compressed_digest": "sha256:7f9f2b49a9c2a09f3ca8d3898c9bdf62981dcfef4eb08de003376e149e5e0d10",
+      "compressed_bytes": 1228,
+      "diff_id": "sha256:333a8831ddcf5b34c95f484a9fedebea9a3a256bc842b87e23bbba919dce752d",
+      "uncompressed_bytes": 5632,
+      "verified": true
+    },
+    {
+      "index": 14,
+      "compressed_digest": "sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1",
+      "compressed_bytes": 32,
+      "diff_id": "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "uncompressed_bytes": 1024,
+      "verified": true
+    },
+    {
+      "index": 15,
+      "compressed_digest": "sha256:7915ddbb065a22749b8592657b37b5df37b572fc4b14eb9081877dc4832d4b8e",
+      "compressed_bytes": 5273,
+      "diff_id": "sha256:7d218024a5f9ec831950a70915e18650ea8c39139bf10c221c03db9c19f39bf0",
+      "uncompressed_bytes": 20480,
+      "verified": true
+    },
+    {
+      "index": 16,
+      "compressed_digest": "sha256:305ce0b324f47d6cad83d2269ae98e5fedada1d4efebc4bbbe646eba93ba7425",
+      "compressed_bytes": 37031,
+      "diff_id": "sha256:05fc6cfed80a5aa989731de34734c20bcd3f279ba1d9ec85ade61e1e2ea73cb0",
+      "uncompressed_bytes": 496640,
+      "verified": true
+    },
+    {
+      "index": 17,
+      "compressed_digest": "sha256:aca734fc689574b0c3a9cc17db5d3909e8cb30834edf1e30673a1c5132764c89",
+      "compressed_bytes": 137,
+      "diff_id": "sha256:31a2de9546ac5dd022717900505b581d2ac4ae1939bc0f2600178f007d2dfb1b",
+      "uncompressed_bytes": 2560,
+      "verified": true
+    },
+    {
+      "index": 18,
+      "compressed_digest": "sha256:5a302466531ad77b35e78c22c4c827acb9b5a60e818c97bd74d45c36dd1a1ee9",
+      "compressed_bytes": 1229,
+      "diff_id": "sha256:381c081aa6fd5595ee295926cc95c019d450dcf9b104173e5474162c15ffa0b3",
+      "uncompressed_bytes": 5632,
+      "verified": true
+    },
+    {
+      "index": 19,
+      "compressed_digest": "sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1",
+      "compressed_bytes": 32,
+      "diff_id": "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "uncompressed_bytes": 1024,
+      "verified": true
+    },
+    {
+      "index": 20,
+      "compressed_digest": "sha256:519de6850d329debe4aae3ee493f91ee9092e19370942b1a6bac9ab0e0f21c90",
+      "compressed_bytes": 5274,
+      "diff_id": "sha256:1420c2c627594aae315d01d4cb3c9206e170f897ce331cc59a3f6a1819680f7d",
+      "uncompressed_bytes": 20480,
+      "verified": true
+    },
+    {
+      "index": 21,
+      "compressed_digest": "sha256:cdfc1b7d21eb030290ce9d75617d22407ab46c8a7bc349d187d919a75166a66d",
+      "compressed_bytes": 31782,
+      "diff_id": "sha256:d4a970016dcb5801eb2f5eb802c6eaa2249c511b3e21f6461840805b479a136f",
+      "uncompressed_bytes": 145408,
+      "verified": true
+    },
+    {
+      "index": 22,
+      "compressed_digest": "sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1",
+      "compressed_bytes": 32,
+      "diff_id": "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "uncompressed_bytes": 1024,
+      "verified": true
+    }
+  ]
+}
